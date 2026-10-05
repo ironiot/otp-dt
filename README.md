@@ -20,9 +20,9 @@ be found at <https://hexdocs.pm/otp_dt>.
 
 ## Architecture
 There are two proposed architectures for the project.
-![System architecture](system-arch.png)
+![System architecture](assets/system-arch.png)
 
-![System architecture from statement of work](system-arch-sow.png)
+![System architecture from statement of work](assets/system-arch-sow.png)
 
 ## TODOs
 - [] Revamp the architecture to be more compatible with
