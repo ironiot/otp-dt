@@ -2,6 +2,8 @@ defmodule TranslinkDb.Schemas.StopTransfer do
   use Ecto.Schema
 
   @primary_key false
+  @foreign_key_type :integer
+
   schema "stop_transfer" do
     belongs_to(:from_stop, TranslinkDb.Schemas.Stop,
       foreign_key: :from_stop_id,

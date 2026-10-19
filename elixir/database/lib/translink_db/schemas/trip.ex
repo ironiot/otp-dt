@@ -1,6 +1,9 @@
 defmodule TranslinkDb.Schemas.Trip do
   use Ecto.Schema
 
+  @primary_key {:id, :integer, autogenerate: false}
+  @foreign_key_type :integer
+
   schema "trip" do
     field(:headsign, :string)
 

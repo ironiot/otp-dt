@@ -1,6 +1,9 @@
 defmodule TranslinkDb.Schemas.Stop do
   use Ecto.Schema
 
+  @primary_key {:id, :integer, autogenerate: false}
+  @foreign_key_type :integer
+
   schema "stop" do
     field(:code, :integer)
     field(:name, :string)
