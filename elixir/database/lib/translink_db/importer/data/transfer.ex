@@ -1,9 +1,9 @@
-defmodule TranslinkDb.Importer.Transfers do
+defmodule TranslinkDb.Importer.Transfer do
   alias TranslinkDb.Importer.{Batch, CSV, Parser}
   alias TranslinkDb.Schemas.{StopTransfer, TripTransfer}
 
-  @spec run(map()) :: :ok
-  def run(feed) do
+  @spec import_data(map()) :: :ok
+  def import_data(feed) do
     IO.puts("\nImporting transfers")
 
     {stop_transfers, trip_transfers} =

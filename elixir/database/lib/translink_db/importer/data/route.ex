@@ -1,9 +1,9 @@
-defmodule TranslinkDb.Importer.Routes do
+defmodule TranslinkDb.Importer.Route do
   alias TranslinkDb.Importer.{Batch, CSV, Parser}
   alias TranslinkDb.Schemas.Route
 
-  @spec run(map()) :: :ok
-  def run(feed) do
+  @spec import_data(map()) :: :ok
+  def import_data(feed) do
     IO.puts("\nImporting routes")
 
     routes =

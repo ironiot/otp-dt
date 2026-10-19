@@ -1,9 +1,9 @@
-defmodule TranslinkDb.Importer.StopTimes do
+defmodule TranslinkDb.Importer.StopTime do
   alias TranslinkDb.Importer.{Batch, CSV, Parser}
   alias TranslinkDb.Schemas.StopTime
 
-  @spec run(map()) :: :ok
-  def run(feed) do
+  @spec import_data(map()) :: :ok
+  def import_data(feed) do
     IO.puts("\nImporting stop times")
 
     rows =

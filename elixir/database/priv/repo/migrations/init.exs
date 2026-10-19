@@ -33,24 +33,21 @@ defmodule TranslinkDb.Repo.Migrations.Init do
       add(:name, :string, null: false)
     end
 
+    # Linked with trip to indicate on which date a route is available
     create table(:service, primary_key: false) do
       add(:id, :integer, primary_key: true)
-    end
-
-    create table(:service_date, primary_key: false) do
-      add(:service_id, references(:service, type: :integer), primary_key: true)
       add(:date, :date, primary_key: true)
     end
 
-    create(index(:service_date, [:date]))
+    create(index(:service, [:date]))
 
     # An individual run, with direction
     create table(:trip, primary_key: false) do
       add(:id, :integer, primary_key: true)
       # e.g. "To UBC Exchange", for UI only
       add(:headsign, :string, null: false)
+      add(:service_id, :integer, null: false)
       add(:route_id, references(:route, type: :integer), null: false)
-      add(:service_id, references(:service, type: :integer), null: false)
     end
 
     create(index(:trip, [:route_id]))

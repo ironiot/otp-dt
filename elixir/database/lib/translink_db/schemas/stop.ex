@@ -15,10 +15,7 @@ defmodule TranslinkDb.Schemas.Stop do
     has_many(:stop_times, TranslinkDb.Schemas.StopTime)
     has_many(:trip_transfers, TranslinkDb.Schemas.TripTransfer)
 
-    has_many(:outgoing_stop_transfers, TranslinkDb.Schemas.StopTransfer,
-      foreign_key: :from_stop_id
-    )
-
-    has_many(:incoming_stop_transfers, TranslinkDb.Schemas.StopTransfer, foreign_key: :to_stop_id)
+    has_many(:outgoing_transfers, TranslinkDb.Schemas.StopTransfer, foreign_key: :from_stop_id)
+    has_many(:incoming_transfers, TranslinkDb.Schemas.StopTransfer, foreign_key: :to_stop_id)
   end
 end

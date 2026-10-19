@@ -1,11 +1,13 @@
-defmodule TranslinkDb.Importer.Calendars do
+defmodule TranslinkDb.Importer.Service do
   alias TranslinkDb.Importer.{Batch, CSV, Parser}
-  alias TranslinkDb.Schemas.{Service, ServiceDate}
+  alias TranslinkDb.Schemas.Service
 
   @weekdays ~w(monday tuesday wednesday thursday friday saturday sunday)
 
-  @spec run(map()) :: :ok
-  def run(feed) do
+  @spec import_data(map()) :: :ok
+  def import_data(feed) do
+    IO.puts("\nImporting services")
+
     calendar_rows =
       feed
       |> Map.fetch!("calendar.txt")
@@ -14,30 +16,21 @@ defmodule TranslinkDb.Importer.Calendars do
 
     services =
       calendar_rows
-      |> Enum.map(fn {service_id, _start_date, _end_date, _weekdays} -> %{id: service_id} end)
-      |> Enum.sort_by(& &1.id)
-
-    Batch.insert_in_batches(Service, services)
-
-    service_dates =
-      calendar_rows
-      |> Enum.reduce(MapSet.new(), fn {service_id, start_date, end_date, weekdays},
-                                      service_dates ->
-        add_service_dates(service_id, start_date, end_date, weekdays, service_dates)
+      |> Enum.reduce(MapSet.new(), fn {id, start_date, end_date, weekdays}, services ->
+        add_services(id, start_date, end_date, weekdays, services)
       end)
       |> apply_calendar_dates(Map.fetch!(feed, "calendar_dates.txt"))
-      |> Enum.map(fn {service_id, date} -> %{service_id: service_id, date: date} end)
-      |> Enum.sort_by(&{&1.service_id, &1.date})
+      |> Enum.map(fn {id, date} -> %{id: id, date: date} end)
 
-    Batch.insert_in_batches(ServiceDate, service_dates)
+    Batch.insert_in_batches(Service, services)
   end
 
   defp parse_calendar_row(row) do
-    with {:ok, service_id} <- Parser.integer(row, "service_id"),
+    with {:ok, id} <- Parser.integer(row, "service_id"),
          {:ok, start_date} <- Parser.date(row, "start_date"),
          {:ok, end_date} <- Parser.date(row, "end_date"),
          {:ok, weekdays} <- parse_weekdays(row) do
-      [{service_id, start_date, end_date, weekdays}]
+      [{id, start_date, end_date, weekdays}]
     else
       {:error, message} ->
         IO.puts("Discarding row: #{message}")
@@ -54,41 +47,41 @@ defmodule TranslinkDb.Importer.Calendars do
     end)
   end
 
-  defp add_service_dates(service_id, start_date, end_date, weekdays, service_dates) do
-    Enum.reduce(Date.range(start_date, end_date), service_dates, fn date, service_dates ->
+  defp add_services(id, start_date, end_date, weekdays, services) do
+    Enum.reduce(Date.range(start_date, end_date), services, fn date, services ->
       if Map.fetch!(weekdays, weekday_field(date)) do
-        MapSet.put(service_dates, {service_id, date})
+        MapSet.put(services, {id, date})
       else
-        service_dates
+        services
       end
     end)
   end
 
-  defp apply_calendar_dates(service_dates, content) do
+  defp apply_calendar_dates(services, content) do
     content
     |> CSV.stream("calendar_dates.txt")
-    |> Enum.reduce(service_dates, fn row, service_dates ->
-      with {:ok, service_id} <- Parser.integer(row, "service_id"),
+    |> Enum.reduce(services, fn row, services ->
+      with {:ok, id} <- Parser.integer(row, "service_id"),
            {:ok, date} <- Parser.date(row, "date"),
            {:ok, exception_type} <- Parser.integer(row, "exception_type") do
         case exception_type do
           1 ->
-            MapSet.put(service_dates, {service_id, date})
+            MapSet.put(services, {id, date})
 
           2 ->
-            MapSet.delete(service_dates, {service_id, date})
+            MapSet.delete(services, {id, date})
 
           other ->
             IO.puts(
               "Discarding row: #{row.file}:#{row.line}: invalid exception_type #{inspect(other)}"
             )
 
-            service_dates
+            services
         end
       else
         {:error, message} ->
           IO.puts("Discarding row: #{message}")
-          service_dates
+          services
       end
     end)
   end

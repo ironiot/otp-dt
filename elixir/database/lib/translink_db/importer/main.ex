@@ -1,5 +1,5 @@
 defmodule TranslinkDb.Importer do
-  alias TranslinkDb.Importer.{Calendars, Feed, Routes, Stops, StopTimes, Transfers, Trips}
+  alias TranslinkDb.Importer.{Feed, Route, Service, Stop, StopTime, Transfer, Trip}
   alias TranslinkDb.Repo
 
   @spec run() :: :ok | {:error, term()}
@@ -7,12 +7,12 @@ defmodule TranslinkDb.Importer do
     with {:ok, feed} <- Feed.fetch() do
       case Repo.transaction(fn ->
              truncate_all()
-             Stops.run(feed)
-             Routes.run(feed)
-             Calendars.run(feed)
-             Trips.run(feed)
-             Transfers.run(feed)
-             StopTimes.run(feed)
+             Stop.import_data(feed)
+             Route.import_data(feed)
+             Service.import_data(feed)
+             Trip.import_data(feed)
+             Transfer.import_data(feed)
+             StopTime.import_data(feed)
            end) do
         {:ok, _} -> :ok
         {:error, reason} -> {:error, reason}
@@ -29,7 +29,6 @@ defmodule TranslinkDb.Importer do
       stop_transfer,
       stop_time,
       trip,
-      service_date,
       service,
       stop,
       station,

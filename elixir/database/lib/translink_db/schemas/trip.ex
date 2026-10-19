@@ -6,9 +6,9 @@ defmodule TranslinkDb.Schemas.Trip do
 
   schema "trip" do
     field(:headsign, :string)
+    field(:service_id, :integer, primary_key: true)
 
     belongs_to(:route, TranslinkDb.Schemas.Route)
-    belongs_to(:service, TranslinkDb.Schemas.Service)
 
     has_many(:stop_times, TranslinkDb.Schemas.StopTime)
 

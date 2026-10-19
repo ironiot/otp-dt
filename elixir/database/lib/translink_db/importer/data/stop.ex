@@ -1,9 +1,9 @@
-defmodule TranslinkDb.Importer.Stops do
+defmodule TranslinkDb.Importer.Stop do
   alias TranslinkDb.Importer.{Batch, CSV, Parser}
   alias TranslinkDb.Schemas.{Station, Stop}
 
-  @spec run(map()) :: :ok
-  def run(feed) do
+  @spec import_data(map()) :: :ok
+  def import_data(feed) do
     IO.puts("\nImporting stops and stations")
 
     {stations, stops} =
@@ -42,7 +42,7 @@ defmodule TranslinkDb.Importer.Stops do
 
         2 ->
           # Station entrances, we don't need those
-          :ok 
+          :ok
 
         other ->
           {:error, "#{row.file}:#{row.line}: unknown location_type #{inspect(other)}"}
