@@ -6,7 +6,7 @@ defmodule TranslinkDb.Schemas.Trip do
 
   schema "trip" do
     field(:headsign, :string)
-    field(:service_id, :integer, primary_key: true)
+    field(:service_id, :integer)
 
     belongs_to(:route, TranslinkDb.Schemas.Route)
 
