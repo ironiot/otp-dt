@@ -28,13 +28,11 @@ defmodule TranslinkDb.Importer.Trip do
   defp trip_attrs(row) do
     with {:ok, id} <- Parser.integer(row, "trip_id"),
          {:ok, headsign} <- Parser.string(row, "trip_headsign"),
-         {:ok, route_id} <- Parser.integer(row, "route_id"),
          {:ok, service_id} <- Parser.integer(row, "service_id") do
       {:ok,
        %{
          id: id,
          headsign: headsign,
-         route_id: route_id,
          service_id: service_id
        }}
     end

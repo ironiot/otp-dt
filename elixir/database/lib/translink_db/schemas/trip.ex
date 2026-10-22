@@ -8,8 +8,6 @@ defmodule TranslinkDb.Schemas.Trip do
     field(:headsign, :string)
     field(:service_id, :integer)
 
-    belongs_to(:route, TranslinkDb.Schemas.Route)
-
     has_many(:stop_times, TranslinkDb.Schemas.StopTime)
 
     has_many(:outgoing_trip_transfers, TranslinkDb.Schemas.TripTransfer,

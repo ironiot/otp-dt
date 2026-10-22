@@ -1,6 +1,5 @@
 defmodule TranslinkDb.Application do
   use Application
-
   @registry TranslinkDb.Registry
 
   @impl true

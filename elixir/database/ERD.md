@@ -11,17 +11,11 @@ erDiagram
 	}
 
 	stop {
-		integer id PK "TransLink internal ID"
-		integer code  "number on bus stop sign"
+		integer id PK "the number on bus stop sign"
 		string name  ""
 		float latitude
 		float longitude
-		integer station_id FK "only for train pltforms"
-	}
-
-	route {
-		integer id PK ""
-		string name  ""
+		integer station_id FK "only for train platforms"
 	}
 
 	service {
@@ -33,7 +27,6 @@ erDiagram
 		integer id PK ""
 		string headsign  "e.g. '99 To UBC Exchange'"
 		integer service_id  ""
-		integer route_id FK ""
 	}
 
 	stop_time {
@@ -59,7 +52,6 @@ erDiagram
 	}
 
 	station||--o{stop:"has platforms"
-	route||--o{trip:"operates"
 	service}o..o{trip:"active on"
 	trip||--o{stop_time:"visits"
 	stop||--o{stop_time:"visited by"

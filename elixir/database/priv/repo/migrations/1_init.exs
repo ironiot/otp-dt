@@ -14,8 +14,8 @@ defmodule TranslinkDb.Repo.Migrations.Init do
       # Internal ID used by translink
       add(:id, :integer, primary_key: true)
       # The number on bus stop signs,
-      # not present for station platforms,
-      # technically not guaranteed unique (though most likely is)
+      # not guaranteed unique according to GTFS,
+      # but *is* unique for this dataset.
       add(:code, :integer, null: true)
       add(:name, :string, null: false)
       # Need geo-coordinates for walking distance
@@ -25,23 +25,13 @@ defmodule TranslinkDb.Repo.Migrations.Init do
       add(:station_id, references(:station, type: :integer), null: true)
     end
 
-    create(index(:stop, [:station_id]))
-
-    # Bus/train lines. Directions count as the same route.
-    create table(:route, primary_key: false) do
-      add(:id, :integer, primary_key: true)
-      add(:name, :string, null: false)
-    end
-
     # Linked with trip to indicate on which date a route is available
     create table(:service, primary_key: false) do
       add(:id, :integer, primary_key: true)
       add(:date, :date, primary_key: true)
     end
 
-    create(index(:service, [:date]))
-
-    # An individual vehicle on a particlar route
+    # A vehicle run on a particlar route
     # (2 busses with same number arriving the same stop consecutively
     # have different trip ids)
     create table(:trip, primary_key: false) do
@@ -49,11 +39,7 @@ defmodule TranslinkDb.Repo.Migrations.Init do
       # e.g. "To UBC Exchange", for UI only
       add(:headsign, :string, null: false)
       add(:service_id, :integer, null: false)
-      add(:route_id, references(:route, type: :integer), null: false)
     end
-
-    create(index(:trip, [:route_id]))
-    create(index(:trip, [:service_id]))
 
     create table(:stop_time, primary_key: false) do
       add(:trip_id, references(:trip, type: :integer), primary_key: true)
@@ -71,8 +57,6 @@ defmodule TranslinkDb.Repo.Migrations.Init do
       add(:dropoff, :boolean, null: false)
     end
 
-    create(index(:stop_time, [:stop_id]))
-
     # Some pairs of bus stops have an estimated transfer time,
     # use this when available, otherwise infer from geo-coordinates
     create table(:stop_transfer, primary_key: false) do
@@ -80,8 +64,6 @@ defmodule TranslinkDb.Repo.Migrations.Init do
       add(:to_stop_id, references(:stop, type: :integer), primary_key: true)
       add(:seconds, :integer, null: false)
     end
-
-    create(index(:stop_transfer, [:to_stop_id]))
 
     # When you can stay on the same bus when it changes route
     # A trip transfer is equivalent to a stop transfer with
@@ -92,6 +74,9 @@ defmodule TranslinkDb.Repo.Migrations.Init do
       add(:stop_id, references(:stop, type: :integer), null: false)
     end
 
-    create(index(:trip_transfer, [:stop_id]))
+    create(index(:stop, [:station_id]))
+    create(index(:service, [:date]))
+    create(index(:trip, [:service_id]))
+    create(index(:stop_time, [:stop_id]))
   end
 end
