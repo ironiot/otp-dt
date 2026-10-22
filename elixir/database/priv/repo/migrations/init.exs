@@ -41,7 +41,9 @@ defmodule TranslinkDb.Repo.Migrations.Init do
 
     create(index(:service, [:date]))
 
-    # An individual run, with direction
+    # An individual vehicle on a particlar route
+    # (2 busses with same number arriving the same stop consecutively
+    # have different trip ids)
     create table(:trip, primary_key: false) do
       add(:id, :integer, primary_key: true)
       # e.g. "To UBC Exchange", for UI only

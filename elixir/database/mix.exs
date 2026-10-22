@@ -25,7 +25,9 @@ defmodule TranslinkDb.MixProject do
       {:nimble_csv, "~> 1.2"},
       {:postgrex, ">= 0.0.0"},
       {:req, "~> 0.7.0"},
-      {:timescale, "~> 0.1.0"}
+      {:timescale, "~> 0.1.0"},
+      {:priority_queue, "~> 1.1"},
+      {:tzdata, "~> 1.2"}
     ]
   end
 end
