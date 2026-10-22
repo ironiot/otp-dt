@@ -5,18 +5,25 @@ defmodule Api.Application do
 
   use Application
 
+  @table    Api.Table
+  @registry Api.Registry
+
   @impl true
   def start(_type, _args) do
     children = [
       ApiWeb.Telemetry,
       {DNSCluster, query: Application.get_env(:api, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Api.PubSub},
+      {Registry, name: @registry, keys: :unique},
       # Start a worker by calling: Api.Worker.start_link(arg)
       # {Api.Worker, arg},
+      Api.DynamicSupervisor,
+
       # Start to serve requests, typically the last entry
       ApiWeb.Endpoint
     ]
 
+    :ets.new(@table, [:set, :public, :named_table])
     # See https://elixir.hexdocs.pm/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Api.Supervisor]
