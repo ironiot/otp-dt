@@ -10,22 +10,34 @@ defmodule TranslinkDb.Importer.Parser do
   end
 
   @spec integer(row(), String.t()) :: {:ok, integer()} | {:error, error()}
-  def integer(row, field), do: parse(row, field, &parse_integer/1)
+  def integer(row, field) do
+    parse(row, field, &parse_integer/1)
+  end
 
   @spec optional_integer(row(), String.t()) :: {:ok, integer() | nil} | {:error, error()}
-  def optional_integer(row, field), do: parse(row, field, &parse_optional_integer/1)
+  def optional_integer(row, field) do
+    parse(row, field, &parse_optional_integer/1)
+  end
 
   @spec float(row(), String.t()) :: {:ok, float()} | {:error, error()}
-  def float(row, field), do: parse(row, field, &parse_float/1)
+  def float(row, field) do
+    parse(row, field, &parse_float/1)
+  end
 
   @spec date(row(), String.t()) :: {:ok, Date.t()} | {:error, error()}
-  def date(row, field), do: parse(row, field, &parse_date/1)
+  def date(row, field) do
+    parse(row, field, &parse_date/1)
+  end
 
   @spec time(row(), String.t()) :: {:ok, non_neg_integer()} | {:error, error()}
-  def time(row, field), do: parse(row, field, &parse_time/1)
+  def time(row, field) do
+    parse(row, field, &parse_time/1)
+  end
 
   @spec stop_flag(row(), String.t()) :: {:ok, boolean()} | {:error, error()}
-  def stop_flag(row, field), do: parse(row, field, &parse_stop_flag/1)
+  def stop_flag(row, field) do
+    parse(row, field, &parse_stop_flag/1)
+  end
 
   defp parse(row, field, parser) do
     with {:ok, value} <- fetch(row, field) do
@@ -66,12 +78,12 @@ defmodule TranslinkDb.Importer.Parser do
   end
 
   defp parse_date(value) do
-    value = String.trim(value)
+    case String.trim(value) do
+      <<year::binary-size(4), month::binary-size(2), day::binary-size(2)>> ->
+        Date.new!(String.to_integer(year), String.to_integer(month), String.to_integer(day))
 
-    with <<year::binary-size(4), month::binary-size(2), day::binary-size(2)>> <- value do
-      Date.new!(String.to_integer(year), String.to_integer(month), String.to_integer(day))
-    else
-      _ -> raise ArgumentError, "expected YYYYMMDD"
+      _ ->
+        raise ArgumentError, "expected YYYYMMDD"
     end
   end
 

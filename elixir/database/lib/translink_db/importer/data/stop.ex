@@ -35,10 +35,14 @@ defmodule TranslinkDb.Importer.Stop do
     with {:ok, location_type} <- Parser.integer(row, "location_type") do
       case location_type do
         0 ->
-          with {:ok, attrs} <- stop_attrs(row), do: {:ok, {:stop, attrs}}
+          with {:ok, attrs} <- stop_attrs(row) do
+            {:ok, {:stop, attrs}}
+          end
 
         1 ->
-          with {:ok, attrs} <- station_attrs(row), do: {:ok, {:station, attrs}}
+          with {:ok, attrs} <- station_attrs(row) do
+            {:ok, {:station, attrs}}
+          end
 
         2 ->
           # Station entrances, we don't need those

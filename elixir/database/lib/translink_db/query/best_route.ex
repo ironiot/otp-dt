@@ -1,4 +1,4 @@
-alias TranslinkDb.Query.Data
+alias TranslinkDb.Query.{Data, TimeUtils}
 
 defmodule TranslinkDb.Query.BestRoute do
   defmodule Edge do
@@ -35,6 +35,8 @@ defmodule TranslinkDb.Query.BestRoute do
           end
       }
     end
+
+    def display(msg, _) when is_binary(msg), do: msg
   end
 
   defmodule Node do
@@ -62,7 +64,12 @@ defmodule TranslinkDb.Query.BestRoute do
     defp construct_path(
            %Node{prev: prev},
            acc = [
-             %Edge{trip_id: trip_id, to_stop_id: to_stop_id, to_arrival: to_arrival}
+             %Edge{
+               trip_id: trip_id,
+               to_stop_id: to_stop_id,
+               from_departure: from_departure,
+               to_arrival: to_arrival
+             }
              | rest
            ]
          ) do
@@ -81,7 +88,17 @@ defmodule TranslinkDb.Query.BestRoute do
             | rest
           ]
         else
-          [prev.edge | acc]
+          case from_departure - prev.edge.to_arrival do
+            0 ->
+              [prev.edge | acc]
+
+            seconds ->
+              [
+                prev.edge,
+                "Wait #{TimeUtils.humanize(seconds)}"
+                | acc
+              ]
+          end
         end
       )
     end
@@ -147,93 +164,125 @@ defmodule TranslinkDb.Query.BestRoute do
           :empty
 
         {{_best_arrival, popped_node}, new_queue} ->
-          if stale |> MapSet.member?(popped_node) do
-            pop(%NodePQ{
-              map: map,
-              queue: new_queue,
-              stale: stale
-            })
+          new_priority_queue = %NodePQ{map: map, queue: new_queue, stale: stale}
+
+          if MapSet.member?(stale, popped_node) do
+            pop(new_priority_queue)
           else
-            {popped_node,
-             %NodePQ{
-               map: map,
-               queue: new_queue,
-               stale: stale
-             }}
+            {popped_node, new_priority_queue}
           end
       end
     end
   end
 
-  def find(
-        # TODO: support querying by station
-        {:stop, from_code},
-        {:stop, to_code},
-        # TODO: support querying by arrival time
-        {:departure, departure} \\ {:departure, DateTime.now!("Canada/Pacific")}
-      ) do
-    # TODO: error handling
-    {:ok, from_stop_id} = Data.stop_id_by_code(from_code)
-    {:ok, to_stop_id} = Data.stop_id_by_code(to_code)
+  def find(from, to, time \\ {:departure, DateTime.now!("Canada/Pacific")})
 
-    {depature_date, depature_seconds} = TimeUtils.split(departure)
-    # TODO: handle overnight trips. For now only the departure date counts.
-    # (It'll miss overnight service from the previous day, or if
-    # the departure is late at night, services on the next day.)
-    date_services = Data.date_services(depature_date)
+  def find(from, to, {:departure, departure}) do
+    with {:ok, from_stop_ids} <- resolve_stop_id(from),
+         {:ok, to_stop_ids} <- resolve_stop_id(to) do
+      {depature_date, depature_seconds} = TimeUtils.split(departure)
+      # TODO: handle overnight trips. For now only the departure date counts.
+      # (It'll miss overnight service from the previous day, or if
+      # the departure is late at night, services on the next day.)
+      date_services = Data.date_services(depature_date)
 
-    current = %Node{
-      best_arrival: depature_seconds,
-      stop_id: from_stop_id,
-      prev: nil
-    }
+      current = %Node{
+        stop_id: List.first!(from_stop_ids),
+        best_arrival: depature_seconds,
+        prev: nil
+      }
 
-    search = fn self, current, priority_queue ->
-      if current.stop_id == to_stop_id do
-        edges = Node.construct_path(current)
+      priority_queue =
+        from_stop_ids
+        |> Enum.map(
+          &%Node{
+            stop_id: &1,
+            best_arrival: depature_seconds,
+            prev: nil
+          }
+        )
+        |> Enum.reduce(NodePQ.new(), &NodePQ.update/2)
 
-        if Enum.count(edges) == 0 do
+      case search(current, priority_queue, to_stop_ids, date_services) do
+        :no_path ->
+          "No path"
+
+        [] ->
           %{
             travel_time: "0s",
             route: [],
             arrival: TimeUtils.humanize(departure)
           }
-        else
-          departure = List.first(edges).from_departure
-          arrival = List.last(edges).to_arrival
+
+        edges ->
+          departure = List.first!(edges).from_departure
+          arrival = List.last!(edges).to_arrival
 
           %{
             travel_time: TimeUtils.humanize(arrival - departure),
-            route: edges |> Enum.map(&Edge.display(&1, depature_date)),
-            arrival: depature_date |> TimeUtils.join(arrival) |> TimeUtils.humanize()
+            arrival: depature_date |> TimeUtils.join(arrival) |> TimeUtils.humanize(),
+            itinerary: edges |> Enum.map(&Edge.display(&1, depature_date))
           }
-        end
-      else
-        current.stop_id
-        |> edges(date_services, current.best_arrival)
-        |> Enum.map(
-          &%Node{
-            best_arrival: &1.to_arrival,
-            stop_id: &1.to_stop_id,
-            prev: %{node: current, edge: &1}
-          }
-        )
-        |> Enum.reduce(priority_queue, &NodePQ.update/2)
-        |> NodePQ.pop()
-        |> then(
-          &case &1 do
-            {next, next_pq} -> self.(self, next, next_pq)
-            :empty -> "No path"
-          end
-        )
       end
     end
+  end
 
-    search.(search, current, NodePQ.new())
+  def find(_from, _to, {:arrival, _arrival}) do
+    {:error, "TODO: support querying by arrival time"}
+  end
+
+  defp search(
+         current = %Node{stop_id: stop_id, best_arrival: best_arrival},
+         priority_queue,
+         to_stop_ids,
+         date_services
+       ) do
+    if stop_id in to_stop_ids do
+      Node.construct_path(current)
+    else
+      stop_id
+      |> edges(date_services, best_arrival)
+      |> Enum.map(
+        &%Node{
+          best_arrival: &1.to_arrival,
+          stop_id: &1.to_stop_id,
+          prev: %{node: current, edge: &1}
+        }
+      )
+      |> Enum.reduce(priority_queue, &NodePQ.update/2)
+      |> NodePQ.pop()
+      |> then(
+        &case &1 do
+          {next, next_pq} -> search(next, next_pq, to_stop_ids, date_services)
+          :empty -> :no_path
+        end
+      )
+    end
+  end
+
+  @spec resolve_stop_id(integer() | String.t()) :: {:ok, [Data.stop_id()]} | {:error, String.t()}
+
+  defp resolve_stop_id(code) when is_integer(code) do
+    case Data.stop_id_by_code(code) do
+      nil -> {:error, "Stop code #{code} does not exist"}
+      stop_id -> {:ok, [stop_id]}
+    end
+  end
+
+  defp resolve_stop_id(name) when is_binary(name) do
+    case Data.stop_ids_by_name(name) do
+      [] -> {:error, "Unknown stop name #{name}"}
+      stop_ids -> {:ok, stop_ids}
+    end
   end
 
   @spec edges(Data.stop_id(), [Data.service_id()], Data.seconds()) :: [Edge.t()]
   defp edges(stop_id, services, seconds) do
+    ride_edges =
+      services
+      |> Data.ride_edges(stop_id)
+      |> Enum.map(&struct(Edge, &1))
+
     walk_edges =
       stop_id
       |> Data.walk_edges()
@@ -246,12 +295,7 @@ defmodule TranslinkDb.Query.BestRoute do
         }
       )
 
-    ride_edges =
-      services
-      |> Data.ride_edges(stop_id)
-      |> Enum.map(&struct(Edge, &1))
-
-    (walk_edges ++ ride_edges)
+    (ride_edges ++ walk_edges)
     |> Enum.group_by(& &1.to_stop_id)
     |> Map.new(fn {to_stop_id, rides} ->
       {to_stop_id,
@@ -261,44 +305,5 @@ defmodule TranslinkDb.Query.BestRoute do
     end)
     |> Map.values()
     |> Enum.filter(&(&1 != nil))
-  end
-end
-
-defmodule TimeUtils do
-  @spec split(DateTime.t()) :: {Date.t(), Data.seconds()}
-  def split(dt) do
-    date =
-      dt
-      |> DateTime.shift_zone!("Canada/Pacific")
-      |> DateTime.to_date()
-
-    seconds = dt.hour * 3600 + dt.minute * 60 + dt.second
-    {date, seconds}
-  end
-
-  @spec join(Date.t(), Data.seconds()) :: DateTime.t()
-  def join(date, seconds) do
-    date
-    |> DateTime.new!(~T[00:00:00], "Canada/Pacific")
-    |> DateTime.add(seconds, :second)
-  end
-
-  @spec humanize(Data.seconds()) :: String.t()
-  def humanize(seconds) when is_integer(seconds) do
-    minutes = Integer.floor_div(seconds, 60)
-    seconds = seconds - minutes * 60
-    hours = Integer.floor_div(minutes, 60)
-    minutes = minutes - hours * 60
-
-    hours = if(hours == 0, do: "", else: "#{hours}h ")
-    minutes = if(minutes == 0, do: "", else: "#{minutes}m ")
-    seconds = if(seconds == 0, do: "", else: "#{seconds}s")
-
-    String.trim("#{hours}#{minutes}#{seconds}")
-  end
-
-  @spec humanize(DateTime.t()) :: String.t()
-  def humanize(datetime) do
-    datetime |> DateTime.to_naive() |> NaiveDateTime.to_string()
   end
 end

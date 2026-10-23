@@ -32,10 +32,14 @@ defmodule TranslinkDb.Importer.Transfer do
     with {:ok, transfer_type} <- Parser.integer(row, "transfer_type") do
       case transfer_type do
         type when type in [0, 2] ->
-          with {:ok, attrs} <- stop_transfer_attrs(row), do: {:ok, {:stop_transfer, attrs}}
+          with {:ok, attrs} <- stop_transfer_attrs(row) do
+            {:ok, {:stop_transfer, attrs}}
+          end
 
         4 ->
-          with {:ok, attrs} <- trip_transfer_attrs(row), do: {:ok, {:trip_transfer, attrs}}
+          with {:ok, attrs} <- trip_transfer_attrs(row) do
+            {:ok, {:trip_transfer, attrs}}
+          end
 
         other ->
           {:error, "#{row.file}:#{row.line}: unknown transfer_type #{inspect(other)}"}

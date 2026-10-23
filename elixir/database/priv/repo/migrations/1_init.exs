@@ -75,6 +75,8 @@ defmodule TranslinkDb.Repo.Migrations.Init do
     end
 
     create(index(:stop, [:station_id]))
+    create(index(:stop, [:name]))
+    create(index(:station, [:name]))
     create(index(:service, [:date]))
     create(index(:trip, [:service_id]))
     create(index(:stop_time, [:stop_id]))

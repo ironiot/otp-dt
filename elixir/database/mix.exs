@@ -7,6 +7,7 @@ defmodule TranslinkDb.MixProject do
       version: "0.1.0",
       elixir: "~> 1.20",
       start_permanent: Mix.env() == :prod,
+      dialyzer: [plt_add_apps: [:mix]],
       deps: deps()
     ]
   end
@@ -27,7 +28,8 @@ defmodule TranslinkDb.MixProject do
       {:req, "~> 0.7.0"},
       {:timescale, "~> 0.1.0"},
       {:priority_queue, "~> 1.1"},
-      {:tzdata, "~> 1.2"}
+      {:tzdata, "~> 1.2"},
+      {:ex_fuzzywuzzy, "~> 0.3.0"}
     ]
   end
 end

@@ -3,20 +3,20 @@ defmodule TranslinkDb.Importer do
   alias TranslinkDb.Repo
 
   @spec run() :: :ok | {:error, term()}
-  def run do
-    with {:ok, feed} <- Feed.fetch() do
-      case Repo.transaction(fn ->
-             truncate_all()
-             Stop.import_data(feed)
-             Service.import_data(feed)
-             Trip.import_data(feed)
-             Transfer.import_data(feed)
-             StopTime.import_data(feed)
-           end) do
-        {:ok, _} -> :ok
-        {:error, reason} -> {:error, reason}
-      end
+  def run() do
+    with {:ok, feed} <- Feed.fetch(),
+         {:ok, _} <- Repo.transaction(fn -> run(feed) end) do
+      :ok
     end
+  end
+
+  defp run(feed) do
+    truncate_all()
+    Stop.import_data(feed)
+    Service.import_data(feed)
+    Trip.import_data(feed)
+    Transfer.import_data(feed)
+    StopTime.import_data(feed)
   end
 
   defp truncate_all do
