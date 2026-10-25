@@ -90,13 +90,22 @@ defmodule TranslinkDb.Query.Data do
 
     Worker.get(:stop_ids_by_name)
     |> Enum.map(fn {stop_name, stop_ids} ->
-      %{
-        match: token_set_ratio(searched_name, stop_name),
-        stop_ids: stop_ids
-      }
+      Task.async(fn ->
+        %{
+          match: partial_ratio(searched_name, stop_name),
+          stop_ids: stop_ids
+        }
+      end)
     end)
-    |> Enum.filter(&(&1.match == 100))
-    |> Enum.flat_map(& &1.stop_ids)
+    |> Enum.map(&Task.await/1)
+    |> Enum.group_by(& &1.match, & &1.stop_ids)
+    |> Enum.sort_by(fn {match, _ids_groups} -> match end, :desc)
+    |> then(
+      &case &1 do
+        [{_match, ids_groups} | _] -> Enum.concat(ids_groups)
+        [] -> []
+      end
+    )
   end
 
   @spec stop_name(stop_id()) :: String.t()

@@ -106,7 +106,6 @@ defmodule TranslinkDb.Query.Data.Loader do
   end
 
   @ride_edge_buckets 256
-  @max_concurrency 16
 
   def ride_edges() do
     buckets =
@@ -127,7 +126,6 @@ defmodule TranslinkDb.Query.Data.Loader do
     |> Repo.all()
     |> Task.async_stream(
       &ride_edges_bucket/1,
-      max_concurrency: @max_concurrency,
       ordered: false,
       timeout: :infinity
     )
