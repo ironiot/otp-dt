@@ -48,7 +48,7 @@ defmodule TranslinkDb.Query.BestRoute do
             prev: %{node: t(), edge: Edge.t()} | nil
           }
 
-    @spec construct_path(t()) :: [Edge.t()]
+    @spec construct_path(t()) :: [Edge.t() | String.t()]
     def construct_path(node) do
       construct_path(node, [])
     end
@@ -187,7 +187,7 @@ defmodule TranslinkDb.Query.BestRoute do
       date_services = Data.date_services(depature_date)
 
       current = %Node{
-        stop_id: List.first!(from_stop_ids),
+        stop_id: List.first(from_stop_ids),
         best_arrival: depature_seconds,
         prev: nil
       }
@@ -215,8 +215,14 @@ defmodule TranslinkDb.Query.BestRoute do
           }
 
         edges ->
-          departure = List.first!(edges).from_departure
-          arrival = List.last!(edges).to_arrival
+          departure = List.first(edges).from_departure
+          arrival = List.last(edges).to_arrival
+
+          edges =
+            case departure - depature_seconds do
+              0 -> edges
+              first_wait -> ["Wait #{TimeUtils.humanize(first_wait)}" | edges]
+            end
 
           %{
             travel_time: TimeUtils.humanize(arrival - departure),
