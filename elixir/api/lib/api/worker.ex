@@ -3,7 +3,6 @@ defmodule Api.Worker do
 
   @server TranslinkDb.Query.Server
 
-
   def start_link(nil) do
 	  GenServer.start_link(__MODULE__, name: __MODULE__)
   end
