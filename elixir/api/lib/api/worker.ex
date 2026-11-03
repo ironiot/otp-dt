@@ -1,28 +1,30 @@
 defmodule Api.Worker do
   use GenServer
 
-  @registry Api.Registry
+  @server TranslinkDb.Query.Server
 
-  defp via(name) do
-    {:via, Registry, {@registry, {__MODULE__, name}}}
+
+  def start_link(nil) do
+	  GenServer.start_link(__MODULE__, name: __MODULE__)
   end
 
-
-  # region CLIENT
-  def start_link(name) do
-    GenServer.start_link(__MODULE__, name, name: via(name))
+  def route(source, destination) do
+	  GenServer.call(
+      {:global, @server},
+      {:route, source, destination}
+    )
   end
 
-  def get_route() do
-    GenServer.call()
+  def route(source, destination, date) do
+	  GenServer.call(
+      {:global, @server},
+      {:route, source, destination, date}
+    )
   end
-  # endregion
-  
-  # region SERVER
+
   @impl GenServer
   def init(_) do
     {:ok, nil}
   end
-  # endregion
 
 end

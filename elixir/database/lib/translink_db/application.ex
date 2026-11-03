@@ -8,7 +8,8 @@ defmodule TranslinkDb.Application do
       [
         {Registry, name: @registry, keys: :unique},
         TranslinkDb.Repo,
-        TranslinkDb.Query.Data
+        TranslinkDb.Query.Data,
+        {TranslinkDb.Query.Server, nil}
       ],
       strategy: :one_for_one,
       name: TranslinkDb.Supervisor

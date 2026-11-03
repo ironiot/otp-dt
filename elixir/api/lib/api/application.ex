@@ -6,7 +6,7 @@ defmodule Api.Application do
   use Application
 
   @table    Api.Table
-  @registry Api.Registry
+  @registry TranslinkDb.Registry
 
   @impl true
   def start(_type, _args) do
@@ -17,7 +17,7 @@ defmodule Api.Application do
       {Registry, name: @registry, keys: :unique},
       # Start a worker by calling: Api.Worker.start_link(arg)
       # {Api.Worker, arg},
-      Api.DynamicSupervisor,
+      {Api.Worker, nil},
 
       # Start to serve requests, typically the last entry
       ApiWeb.Endpoint
