@@ -13,7 +13,7 @@ defmodule ApiWeb.ApiController do
     }
   ) do
     render(
-      conn, :routes,
+      conn, :route,
       orig: orig,
       dest: dest,
       time: time
@@ -27,7 +27,7 @@ defmodule ApiWeb.ApiController do
     }
   ) do
     render(
-      conn, :routes,
+      conn, :route,
       orig: orig,
       dest: dest,
       time: nil

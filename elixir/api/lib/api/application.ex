@@ -23,6 +23,9 @@ defmodule Api.Application do
       ApiWeb.Endpoint
     ]
 
+    System.cmd("epmd", ["-daemon"])
+    Node.start(:api, name_domain: :shortnames)
+    Node.connect(System.get_env("DB_HOST") |> String.to_atom)
     :ets.new(@table, [:set, :public, :named_table])
     # See https://elixir.hexdocs.pm/Supervisor.html
     # for other strategies and supported options
