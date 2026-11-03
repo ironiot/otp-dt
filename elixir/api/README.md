@@ -2,9 +2,9 @@
 API Phoenix app for the OTP-DT project.
 
 # Requirements
-* A running db instance, must be set in environment
-  what the hostname is, right now it is a shortname
-  string in elixir/erlang.
+* A running db instance with a shortname.
+  Must be set in environment so the app knows where to 
+  connect to. Right now it is a shortname string in elixir/erlang.
 
 To start your Phoenix server:
 
