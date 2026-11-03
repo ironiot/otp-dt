@@ -1,8 +1,15 @@
 # Api
+API Phoenix app for the OTP-DT project.
+
+# Requirements
+* A running db instance, must be set in environment
+  what the hostname is, right now it is a shortname
+  string in elixir/erlang.
 
 To start your Phoenix server:
 
 * Run `mix setup` to install and setup dependencies
+* Export "DB_HOST" for the db shortname. 
 * Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
