@@ -76,8 +76,3 @@ The result looks something like this
   ]
 }
 ```
-
-## Actually running in prod
-
-Not yet. You just have to manually test `TranslinkDb.Query.BestRoute` in iex.
-But eventually this will be hooked into an API router.
