@@ -1,6 +1,27 @@
 defmodule TranslinkSchema do
   use Protox.Define,
-    enums: [],
+    enums: [
+      {
+        TransitRealtime.TripDescriptor.ScheduleRelationship,
+        [
+          {0, :SCHEDULED},
+          {1, :ADDED},
+          {2, :UNSCHEDULED},
+          {3, :CANCELED},
+          {5, :DUPLICATED},
+          {6, :DELETED}
+        ]
+      },
+      {
+        TransitRealtime.StopTimeUpdate.ScheduleRelationship,
+        [
+          {0, :SCHEDULED},
+          {1, :SKIPPED},
+          {2, :NO_DATA},
+          {3, :UNSCHEDULED}
+        ]
+      }
+    ],
     messages: [
       %Protox.Message{
         name: TransitRealtime.FeedMessage,
@@ -42,6 +63,13 @@ defmodule TranslinkSchema do
           Protox.Field.new!(tag: 1, label: :optional, name: :trip_id, kind: {:scalar, nil}, type: :string),
           Protox.Field.new!(tag: 2, label: :optional, name: :start_time, kind: {:scalar, nil}, type: :string),
           Protox.Field.new!(tag: 3, label: :optional, name: :start_date, kind: {:scalar, nil}, type: :string),
+          Protox.Field.new!(
+            tag: 4,
+            label: :optional,
+            name: :schedule_relationship,
+            kind: {:scalar, :SCHEDULED},
+            type: {:enum, TransitRealtime.TripDescriptor.ScheduleRelationship}
+          ),
           Protox.Field.new!(tag: 5, label: :optional, name: :route_id, kind: {:scalar, nil}, type: :string)
         ]
       },
@@ -60,7 +88,14 @@ defmodule TranslinkSchema do
           Protox.Field.new!(tag: 1, label: :optional, name: :stop_sequence, kind: {:scalar, nil}, type: :uint32),
           Protox.Field.new!(tag: 2, label: :optional, name: :arrival, kind: {:scalar, nil}, type: {:message, TransitRealtime.StopTimeEvent}),
           Protox.Field.new!(tag: 3, label: :optional, name: :departure, kind: {:scalar, nil}, type: {:message, TransitRealtime.StopTimeEvent}),
-          Protox.Field.new!(tag: 4, label: :optional, name: :stop_id, kind: {:scalar, nil}, type: :string)
+          Protox.Field.new!(tag: 4, label: :optional, name: :stop_id, kind: {:scalar, nil}, type: :string),
+          Protox.Field.new!(
+            tag: 5,
+            label: :optional,
+            name: :schedule_relationship,
+            kind: {:scalar, :SCHEDULED},
+            type: {:enum, TransitRealtime.StopTimeUpdate.ScheduleRelationship}
+          )
         ]
       },
       %Protox.Message{

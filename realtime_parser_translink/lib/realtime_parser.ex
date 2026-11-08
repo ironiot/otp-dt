@@ -15,10 +15,10 @@ defmodule TranslinkFetcher do
         # |> Enum.take(10) THIS LIMITS IT TO 10 JUST FOR EASY PRINTING USAGE
         |> Enum.each(fn entity ->
           trip = entity.trip_update.trip
-          IO.puts("Entity ID: #{entity.id} | Route ID: #{trip.route_id} | Trip ID: #{trip.trip_id}")
+          IO.puts("Entity ID: #{entity.id} | Route ID: #{trip.route_id} | Trip ID: #{trip.trip_id} | Trip Status: #{trip.schedule_relationship}")
 
           entity.trip_update.stop_time_update
-          |> Enum.take(1)
+          # |> Enum.take(2)
           |> Enum.each(fn stop ->
             delay = stop.arrival && stop.arrival.delay
             IO.puts("  -> Stop #{stop.stop_id} (Seq #{stop.stop_sequence}): Delay #{delay || 0}s")
