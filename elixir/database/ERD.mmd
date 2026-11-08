@@ -1,0 +1,79 @@
+erDiagram
+	direction LR
+	station {
+		integer id PK
+		string name
+		float latitude "for estimating walk distance"
+		float longitude
+	}
+
+	stop {
+		id id PK
+		code id "bus stop sign number"
+		string name
+		float latitude
+		float longitude
+		integer station_id FK "only for train platforms"
+	}
+
+	service {
+		integer id PK "GTFS service_id"
+		date date PK "one row per active date"
+	}
+
+	trip {
+		integer id PK
+		string headsign  "e.g. '99 To UBC Exchange'"
+		integer service_id
+	}
+
+	stop_time {
+		integer trip_id PK,FK
+		integer stop_sequence PK "position within trip"
+		integer stop_id FK
+		integer arrival  "seconds from start of service day"
+		integer departure
+		boolean pickup
+		boolean dropoff
+	}
+
+	rt_trip {
+		integer trip_id PK,FK
+		date date PK
+		boolean cancelled
+		integer delay "in seconds; applies to all stop times on this trip"
+	}
+
+	rt_stop_time {
+		integer trip_id PK,FK
+		date date PK,FK
+		integer stop_sequence PK,FK
+		boolean skipped "must check both this and rt_trip.cancelled"
+		integer arrival_delay "in seconds; if available, overrides rt_trip.delay"
+		integer departure_delay
+	}
+
+	stop_transfer {
+		integer from_stop_id PK,FK
+		integer to_stop_id PK,FK
+		integer seconds  "transfer time"
+	}
+
+	trip_transfer {
+		integer from_trip_id PK,FK
+		integer to_trip_id PK,FK
+		integer stop_id FK
+	}
+
+	station||--o{stop:"has platforms"
+	service}o..o{trip:"active on"
+	trip||--o{stop_time:"visits"
+	trip||--o{rt_trip:"has realtime updates"
+	rt_trip||--o{rt_stop_time:"realtime visits"
+	stop_time||--o{rt_stop_time:"has realtime updates"
+	stop||--o{stop_time:"visited by"
+	stop||--o{stop_transfer:"from_stop_id"
+	stop||--o{stop_transfer:"to_stop_id"
+	trip||--o{trip_transfer:"from_trip_id"
+	trip||--o{trip_transfer:"to_trip_id"
+	stop||--o{trip_transfer:"at stop_id"

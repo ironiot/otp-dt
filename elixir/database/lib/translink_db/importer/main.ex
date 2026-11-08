@@ -24,6 +24,8 @@ defmodule TranslinkDb.Importer do
 
     Repo.query!("""
     TRUNCATE TABLE
+      rt_stop_time,
+      rt_trip,
       trip_transfer,
       stop_transfer,
       stop_time,
