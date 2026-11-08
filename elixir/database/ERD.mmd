@@ -41,7 +41,6 @@ erDiagram
 		integer trip_id PK,FK
 		date date PK
 		boolean cancelled
-		integer delay "in seconds; applies to all stop times on this trip"
 	}
 
 	rt_stop_time {
@@ -49,7 +48,7 @@ erDiagram
 		date date PK,FK
 		integer stop_sequence PK,FK
 		boolean skipped "must check both this and rt_trip.cancelled"
-		integer arrival_delay "in seconds; if available, overrides rt_trip.delay"
+		integer arrival_delay "in seconds; negative means early"
 		integer departure_delay
 	}
 

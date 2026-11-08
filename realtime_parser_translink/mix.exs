@@ -11,18 +11,17 @@ defmodule RealtimeParserTranslink.MixProject do
     ]
   end
 
-  # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger],
+      mod: {TranslinkFetcher.Application, []}
     ]
   end
 
-  # Run "mix help deps" to learn about dependencies.
-defp deps do
-  [
-    {:req, "~> 0.5.0"},
-    {:protox, "~> 1.7"}
-  ]
-end
+  defp deps do
+    [
+      {:req, "~> 0.5.0"},
+      {:protox, "~> 1.7"}
+    ]
+  end
 end
