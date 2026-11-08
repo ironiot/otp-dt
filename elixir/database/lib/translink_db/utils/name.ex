@@ -1,4 +1,4 @@
-defmodule TranslinkDb.Query.Name do
+defmodule TranslinkDb.Utils.Name do
   def normalize(name) do
     [
       ~r/[^\w\s]/,

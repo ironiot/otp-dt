@@ -1,6 +1,6 @@
-alias TranslinkDb.Query.Data
+alias TranslinkDb.Data
 
-defmodule TranslinkDb.Query.TimeUtils do
+defmodule TranslinkDb.Utils.Time do
   @spec split(DateTime.t()) :: {Date.t(), Data.seconds()}
   def split(dt) do
     date =

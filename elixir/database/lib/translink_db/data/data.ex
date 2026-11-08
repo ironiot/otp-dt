@@ -1,7 +1,7 @@
-alias TranslinkDb.Query.{Name, Data.Worker}
+alias TranslinkDb.{Data.Worker, Name}
 import ExFuzzywuzzy
 
-defmodule TranslinkDb.Query.Data do
+defmodule TranslinkDb.Data do
   @moduledoc "Anything that needs to read DB goes through this module, never use DB directly."
 
   use DynamicSupervisor

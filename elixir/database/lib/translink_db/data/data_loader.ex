@@ -1,9 +1,9 @@
 alias TranslinkDb.Repo
 alias TranslinkDb.Schemas.{Service, Station, StopTime, Stop, StopTransfer, Trip}
-alias TranslinkDb.Query.Name
+alias TranslinkDb.Utils.Name
 import Ecto.Query
 
-defmodule TranslinkDb.Query.Data.Loader do
+defmodule TranslinkDb.Data.Loader do
   @moduledoc "Util module for all direct DB reads."
 
   def walk_edges() do

@@ -4,6 +4,6 @@ defmodule Mix.Tasks.Dev do
   @impl true
   def run(_) do
     Mix.Task.run("app.start")
-    TranslinkDb.Query.Data.load()
+    TranslinkDb.Data.load()
   end
 end

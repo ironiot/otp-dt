@@ -1,17 +1,17 @@
 defmodule TranslinkDb.Query.Server do
   use GenServer
 
-  def start_link(nil) do
+  def start_link(_) do
     GenServer.start_link(
-      __MODULE__, 
-      nil, 
+      __MODULE__,
+      nil,
       name: {:global, __MODULE__}
     )
   end
 
   @impl GenServer
-  def init(nil) do
-    TranslinkDb.Query.Data.load()
+  def init(_) do
+    TranslinkDb.Data.load()
     {:ok, nil}
   end
 

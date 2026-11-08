@@ -1,4 +1,4 @@
-alias TranslinkDb.Query.{Data, TimeUtils}
+alias TranslinkDb.{Data, Utils.Time}
 
 defmodule TranslinkDb.Query.BestRoute do
   defmodule Edge do
@@ -26,8 +26,8 @@ defmodule TranslinkDb.Query.BestRoute do
       %{
         from: Data.stop_name(from_stop_id),
         to: Data.stop_name(to_stop_id),
-        departure: date |> TimeUtils.join(from_departure) |> TimeUtils.humanize(),
-        duration: TimeUtils.humanize(to_arrival - from_departure),
+        departure: date |> Time.join(from_departure) |> Time.humanize(),
+        duration: Time.humanize(to_arrival - from_departure),
         via:
           case trip_id do
             nil -> "Walking"
@@ -95,7 +95,7 @@ defmodule TranslinkDb.Query.BestRoute do
             seconds ->
               [
                 prev.edge,
-                "Wait #{TimeUtils.humanize(seconds)}"
+                "Wait #{Time.humanize(seconds)}"
                 | acc
               ]
           end
@@ -180,7 +180,7 @@ defmodule TranslinkDb.Query.BestRoute do
   def find(from, to, {:departure, departure}) do
     with {:ok, from_stop_ids} <- resolve_stop_id(from),
          {:ok, to_stop_ids} <- resolve_stop_id(to) do
-      {depature_date, depature_seconds} = TimeUtils.split(departure)
+      {depature_date, depature_seconds} = Time.split(departure)
       # TODO: handle overnight trips. For now only the departure date counts.
       # (It'll miss overnight service from the previous day, or if
       # the departure is late at night, services on the next day.)
@@ -211,7 +211,7 @@ defmodule TranslinkDb.Query.BestRoute do
           %{
             travel_time: "0s",
             route: [],
-            arrival: TimeUtils.humanize(departure)
+            arrival: Time.humanize(departure)
           }
 
         edges ->
@@ -221,12 +221,12 @@ defmodule TranslinkDb.Query.BestRoute do
           edges =
             case departure - depature_seconds do
               0 -> edges
-              first_wait -> ["Wait #{TimeUtils.humanize(first_wait)}" | edges]
+              first_wait -> ["Wait #{Time.humanize(first_wait)}" | edges]
             end
 
           %{
-            travel_time: TimeUtils.humanize(arrival - departure),
-            arrival: depature_date |> TimeUtils.join(arrival) |> TimeUtils.humanize(),
+            travel_time: Time.humanize(arrival - departure),
+            arrival: depature_date |> Time.join(arrival) |> Time.humanize(),
             itinerary: edges |> Enum.map(&Edge.display(&1, depature_date))
           }
       end
