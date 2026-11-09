@@ -1,4 +1,4 @@
-alias TranslinkDb.{Data.Worker, Name}
+alias TranslinkDb.{Data.Worker, Utils.Name}
 import ExFuzzywuzzy
 
 defmodule TranslinkDb.Data do
