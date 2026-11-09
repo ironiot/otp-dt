@@ -37,6 +37,10 @@ go.work.sum
 # env file
 .env
 
+# Go collector: build output and API key files
+/go/collector
+super_secret_api.txt
+
 # Editor/IDE
 .idea/
 .vscode/
