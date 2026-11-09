@@ -4,9 +4,9 @@ defmodule TranslinkDb.Fetcher.Trip do
   	- Spawn one for each trip in the system.
    	- In a loop:
      + Call TranslinkFetcher.get_trip_updates()
-     + (This pretents each trip is generating its own data.)
+     + (This pretends each trip is generating its own data.)
      + Write to DB
-     + Motify TranslinkDb.Data to update its state
+     + Notify TranslinkDb.Data to update its state
   """
 
   use GenServer
