@@ -14,10 +14,29 @@ defmodule TranslinkFetcher do
     GenServer.start_link(__MODULE__, nil, name: {:global, __MODULE__})
   end
 
+  @spec get_trip_updates(integer()) :: [
+          %{
+            update_time: integer(),
+            trip_id: integer(),
+            date: Date.t(),
+            cancelled: boolean() | nil
+          }
+        ]
   def get_trip_updates(trip_id) do
     GenServer.call({:global, __MODULE__}, {:trip_updates, trip_id}, @fetch_period_ms)
   end
 
+  @spec get_stop_updates(integer) :: [
+          %{
+            update_time: integer(),
+            trip_id: integer(),
+            stop_sequence: integer(),
+            date: Date.t(),
+            skipped: boolean() | nil,
+            arrival_delay: integer() | nil,
+            departure_delay: integer() | nil
+          }
+        ]
   def get_stop_updates(stop_id) do
     GenServer.call({:global, __MODULE__}, {:stop_updates, stop_id}, @fetch_period_ms)
   end

@@ -23,7 +23,7 @@ defmodule TranslinkFetcher.Parser do
     end
   end
 
-  defp apply_update(trip_update, timestamp) do
+  defp apply_update(trip_update, update_time) do
     with %{trip: trip, stop_time_update: stop_time_update} <- trip_update,
          {:ok, trip_id} <- parse_id(trip.trip_id),
          {:ok, trip_date} <- parse_date(trip.start_date) do
@@ -31,7 +31,8 @@ defmodule TranslinkFetcher.Parser do
         :trip_updates,
         {trip_id,
          %{
-           timestamp: timestamp,
+           update_time: update_time,
+           trip_id: trip_id,
            date: trip_date,
            cancelled:
              case trip.schedule_relationship do
@@ -50,7 +51,7 @@ defmodule TranslinkFetcher.Parser do
             :stop_updates,
             {stop_id,
              %{
-               timestamp: timestamp,
+               update_time: update_time,
                trip_id: trip_id,
                date: trip_date,
                stop_sequence: &1.stop_sequence,
