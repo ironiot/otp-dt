@@ -1,16 +1,16 @@
-alias TranslinkDb.{Data, Utils.Time}
+alias TranslinkDb.{Data.Static, Data.Type, Utils.Time}
 
 defmodule TranslinkDb.Query.BestRoute do
   defmodule Edge do
     defstruct [:from_stop_id, :to_stop_id, :from_departure, :to_arrival, :trip_id]
 
     @type t :: %Edge{
-            from_stop_id: Data.stop_id(),
-            to_stop_id: Data.stop_id(),
-            from_departure: Data.seconds(),
-            to_arrival: Data.seconds(),
+            from_stop_id: Type.stop_id(),
+            to_stop_id: Type.stop_id(),
+            from_departure: Type.seconds(),
+            to_arrival: Type.seconds(),
             # nil == walking
-            trip_id: Data.trip_id() | nil
+            trip_id: Type.trip_id() | nil
           }
 
     def display(
@@ -24,14 +24,14 @@ defmodule TranslinkDb.Query.BestRoute do
           date
         ) do
       %{
-        from: Data.stop_name(from_stop_id),
-        to: Data.stop_name(to_stop_id),
+        from: Static.stop_name(from_stop_id),
+        to: Static.stop_name(to_stop_id),
         departure: date |> Time.join(from_departure) |> Time.humanize(),
         duration: Time.humanize(to_arrival - from_departure),
         via:
           case trip_id do
             nil -> "Walking"
-            id -> Data.trip_headsign(id)
+            id -> Static.trip_headsign(id)
           end
       }
     end
@@ -43,8 +43,8 @@ defmodule TranslinkDb.Query.BestRoute do
     defstruct [:best_arrival, :stop_id, :prev]
 
     @type t :: %Node{
-            best_arrival: Data.seconds(),
-            stop_id: Data.stop_id(),
+            best_arrival: Type.seconds(),
+            stop_id: Type.stop_id(),
             prev: %{node: t(), edge: Edge.t()} | nil
           }
 
@@ -117,7 +117,7 @@ defmodule TranslinkDb.Query.BestRoute do
     ]
 
     @type t :: %NodePQ{
-            map: %{Data.stop_id() => Node.t()},
+            map: %{Type.stop_id() => Node.t()},
             queue: PriorityQueue.t(),
             stale: MapSet.t()
           }
@@ -184,7 +184,7 @@ defmodule TranslinkDb.Query.BestRoute do
       # TODO: handle overnight trips. For now only the departure date counts.
       # (It'll miss overnight service from the previous day, or if
       # the departure is late at night, services on the next day.)
-      date_services = Data.date_services(depature_date)
+      date_services = Static.date_services(depature_date)
 
       current = %Node{
         stop_id: List.first(from_stop_ids),
@@ -266,32 +266,32 @@ defmodule TranslinkDb.Query.BestRoute do
     end
   end
 
-  @spec resolve_stop_id(integer() | String.t()) :: {:ok, [Data.stop_id()]} | {:error, String.t()}
-
+  @spec resolve_stop_id(integer() | String.t()) ::
+          {:ok, [Type.stop_id()]} | {:error, String.t()}
   defp resolve_stop_id(code) when is_integer(code) do
-    case Data.stop_id_by_code(code) do
+    case Static.stop_id_by_code(code) do
       nil -> {:error, "Stop code #{code} does not exist"}
       stop_id -> {:ok, [stop_id]}
     end
   end
 
   defp resolve_stop_id(name) when is_binary(name) do
-    case Data.stop_ids_by_name(name) do
+    case Static.stop_ids_by_name(name) do
       [] -> {:error, "Unknown stop name #{name}"}
       stop_ids -> {:ok, stop_ids}
     end
   end
 
-  @spec edges(Data.stop_id(), [Data.service_id()], Data.seconds()) :: [Edge.t()]
+  @spec edges(Type.stop_id(), [Type.service_id()], Type.seconds()) :: [Edge.t()]
   defp edges(stop_id, services, seconds) do
     ride_edges =
       services
-      |> Data.ride_edges(stop_id)
+      |> Static.ride_edges(stop_id)
       |> Enum.map(&struct(Edge, &1))
 
     walk_edges =
       stop_id
-      |> Data.walk_edges()
+      |> Static.walk_edges()
       |> Enum.map(
         &%Edge{
           from_stop_id: &1.from_stop_id,

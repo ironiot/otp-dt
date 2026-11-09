@@ -10,7 +10,7 @@ These functions block until data arrives (could take upto 2 minutes).
 If these functions are called in larger than 2 minutes interval,
 multiple updates may be returned. It's the caller's responsibility to handle this.
 
-See `TranslinkDb.Fetcher.Stop` and `TranslinkDb.Fetcher.Trip` for usage.
+See `TranslinkDb.Data.Realtime.Updater.{Stop, Trip}` for usage.
 
 ## Structure of realtime data
 

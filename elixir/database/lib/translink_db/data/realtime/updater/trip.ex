@@ -1,12 +1,12 @@
-defmodule TranslinkDb.Fetcher.Trip do
+defmodule TranslinkDb.Data.Realtime.Updater.Trip do
   @moduledoc """
   TODO:
   	- Spawn one for each trip in the system.
    	- In a loop:
-     + Call TranslinkFetcher.get_trip_updates()
+     + Call TranslinkFetcher.get_trip_updates(trip_id)
      + (This pretends each trip is generating its own data.)
      + Write to DB
-     + Notify TranslinkDb.Data to update its state
+     + Notify central state to update.
   """
 
   use GenServer

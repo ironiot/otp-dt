@@ -1,6 +1,6 @@
 ## Setup
 
-```
+```sh
 mix setup
 ```
 
@@ -8,8 +8,8 @@ Database is hardcoded as `translink_db`, belonging to your regular user.
 
 ## Testing
 
-```
-iex -S mix dev
+```sh
+iex -S mix
 ```
 
 Example:

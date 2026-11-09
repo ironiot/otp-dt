@@ -11,7 +11,6 @@ defmodule TranslinkDb.Query.Server do
 
   @impl GenServer
   def init(_) do
-    TranslinkDb.Data.load()
     {:ok, nil}
   end
 

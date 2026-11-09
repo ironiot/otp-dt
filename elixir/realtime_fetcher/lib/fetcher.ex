@@ -5,7 +5,7 @@ defmodule TranslinkFetcher do
 
   @type request :: {:trip_updates, String.t()} | {:stop_updates, String.t()}
   @doc """
-  A call that has not been replied due to data not being available yet.,
+  A call that has not been replied due to data not being available yet.
   `[waiter()]` is this GenServer's state.
   """
   @type waiter :: {pid(), request()}

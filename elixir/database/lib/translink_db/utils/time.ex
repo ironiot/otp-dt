@@ -1,7 +1,7 @@
-alias TranslinkDb.Data
+alias TranslinkDb.Data.Type
 
 defmodule TranslinkDb.Utils.Time do
-  @spec split(DateTime.t()) :: {Date.t(), Data.seconds()}
+  @spec split(DateTime.t()) :: {Date.t(), Type.seconds()}
   def split(dt) do
     date =
       dt
@@ -12,14 +12,14 @@ defmodule TranslinkDb.Utils.Time do
     {date, seconds}
   end
 
-  @spec join(Date.t(), Data.seconds()) :: DateTime.t()
+  @spec join(Date.t(), Type.seconds()) :: DateTime.t()
   def join(date, seconds) do
     date
     |> DateTime.new!(~T[00:00:00], "Canada/Pacific")
     |> DateTime.add(seconds, :second)
   end
 
-  @spec humanize(Data.seconds()) :: String.t()
+  @spec humanize(Type.seconds()) :: String.t()
   def humanize(seconds) when is_integer(seconds) do
     minutes = Integer.floor_div(seconds, 60)
     seconds = seconds - minutes * 60

@@ -1,12 +1,12 @@
-defmodule TranslinkDb.Fetcher.Stop do
+defmodule TranslinkDb.Data.Realtime.Updater.Stop do
   @moduledoc """
   TODO:
   	- Spawn one for each stop in the system.
    	- In a loop:
-     + Call TranslinkFetcher.get_stop_updates()
+     + Call TranslinkFetcher.get_stop_updates(stop_id)
      + (This pretends each stop is generating its own data.)
      + Write to DB
-     + Notify TranslinkDb.Data to update its state
+     + Notify central state to update.
   """
 
   use GenServer

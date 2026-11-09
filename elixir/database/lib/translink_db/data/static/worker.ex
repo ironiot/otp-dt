@@ -1,12 +1,12 @@
-alias TranslinkDb.Data.Loader
+alias TranslinkDb.Data.Static.Loader
 
-defmodule TranslinkDb.Data.Worker do
-  @moduledoc "Load data from DB to `:persistent_term` on start, then exit."
+defmodule TranslinkDb.Data.Static.Worker do
+  @moduledoc "Load static data from DB to `:persistent_term` on start, then exit."
 
   use GenServer
   @registry TranslinkDb.Registry
 
-  @doc "`name` must be an exact function name of `TranslinkDb.Data.Loader`"
+  @doc "`name` must be an exact function name of `TranslinkDb.Data.Static.Loader`"
   def start_link(name) do
     GenServer.start_link(__MODULE__, name, name: via(name))
   end
@@ -26,9 +26,6 @@ defmodule TranslinkDb.Data.Worker do
     # When loading finishes, process will exit, so this branch will hit
     :exit, {:normal, _} ->
       :persistent_term.get(name)
-
-    :exit, {:noproc, _} ->
-      throw("Did you forget to call TranslinkDb.Data.load()?")
   end
 
   defp via(name) do
