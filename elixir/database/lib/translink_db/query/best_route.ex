@@ -175,6 +175,34 @@ defmodule TranslinkDb.Query.BestRoute do
     end
   end
 
+  @doc """
+  Find the best route from `from` to `to`, departing at `{:departure, t}`.
+  Time is optional, default to now.
+
+  Source and target can either be stop codes
+  (the number printed on bus stop signs) or stop names.
+  When querying with names, `TranslinkDb.Data.Static.stop_ids_by_name/1` is used
+  to resolve the name into a list of matched stop IDs.
+  The result is the best route from/to any of the stops in the list.
+
+  For example, `find("YVR", "SFU")` means finding the best route
+  from any of
+
+  - YVR-Airport Station @ Canada Line
+  - YVR-Airport Station @ Platform 1
+  - YVR @ Domestic Departures Level Three
+
+  to any of
+
+  - SFU Transit Exchange @ Bay 4
+  - SFU Transportation Centre @ Bay 2
+  - SFU Transit Exchange @ Bay 1
+  - SFU Transportation Centre @ Bay 1
+  - SFU Transit Exchange @ Bay 3
+  - SFU Transit Exchange @ Bay 2
+
+  See the doc for `TranslinkDb.Data.Static.stop_ids_by_name/1`.
+  """
   def find(from, to, time \\ {:departure, DateTime.now!("Canada/Pacific")})
 
   def find(from, to, {:departure, departure}) do
@@ -285,8 +313,8 @@ defmodule TranslinkDb.Query.BestRoute do
   @spec edges(Type.stop_id(), [Type.service_id()], Type.seconds()) :: [Edge.t()]
   defp edges(stop_id, services, seconds) do
     ride_edges =
-      services
-      |> Static.ride_edges(stop_id)
+      stop_id
+      |> Static.ride_edges(services)
       |> Enum.map(&struct(Edge, &1))
 
     walk_edges =
