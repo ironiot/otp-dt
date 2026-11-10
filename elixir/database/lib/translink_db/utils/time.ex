@@ -1,11 +1,23 @@
 alias TranslinkDb.Data.Type
 
 defmodule TranslinkDb.Util.Time do
+  @tz "Canada/Pacific"
+
+  @spec now() :: DateTime.t()
+  def now() do
+    DateTime.now!(@tz)
+  end
+
+  @spec today() :: Date.t()
+  def today() do
+    now() |> DateTime.to_date()
+  end
+
   @spec split(DateTime.t()) :: {Date.t(), Type.seconds()}
   def split(dt) do
     date =
       dt
-      |> DateTime.shift_zone!("Canada/Pacific")
+      |> DateTime.shift_zone!(@tz)
       |> DateTime.to_date()
 
     seconds = dt.hour * 3600 + dt.minute * 60 + dt.second
@@ -15,7 +27,7 @@ defmodule TranslinkDb.Util.Time do
   @spec join(Date.t(), Type.seconds()) :: DateTime.t()
   def join(date, seconds) do
     date
-    |> DateTime.new!(~T[00:00:00], "Canada/Pacific")
+    |> DateTime.new!(~T[00:00:00], @tz)
     |> DateTime.add(seconds, :second)
   end
 

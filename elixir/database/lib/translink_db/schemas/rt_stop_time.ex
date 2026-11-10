@@ -8,7 +8,7 @@ defmodule TranslinkDb.Schema.RtStopTime do
     field(:stop_sequence, :integer, primary_key: true)
     field(:date, :date, primary_key: true)
 
-    field(:skipped, :boolean, default: false)
+    field(:skipped, :boolean)
     field(:arrival_delay, :integer)
     field(:departure_delay, :integer)
   end

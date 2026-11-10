@@ -1,4 +1,6 @@
-alias TranslinkDb.{Data.Type, Data.Static.Worker, Util.Name}
+alias TranslinkDb.Data.Type
+alias TranslinkDb.Data.Static.Cache
+alias TranslinkDb.Util.Name
 import ExFuzzywuzzy
 
 defmodule TranslinkDb.Data.Static do
@@ -18,38 +20,59 @@ defmodule TranslinkDb.Data.Static do
   @impl true
   def init(_) do
     [
-      :ride_edges,
+      :ride_edges_by_service,
+      :trip_ids_by_service,
       :walk_edges,
-      :date_services,
+      :service_by_date,
       :trip_headsigns,
       :stop_id_by_code,
       :stop_ids_by_name,
       :stop_names
     ]
-    |> Enum.map(&Supervisor.child_spec({Worker, &1}, id: &1, restart: :transient))
+    |> Enum.map(&Supervisor.child_spec({Cache, &1}, id: &1, restart: :transient))
     |> Supervisor.init(strategy: :one_for_one)
   end
 
-  @doc """
-  Given a stop, get a list of stops walkable from that one.
-  """
+  @doc "Given a stop, get a list of stops walkable from that one."
   @spec walk_edges(Type.stop_id()) :: [Type.walk_edge()]
   def walk_edges(stop_id) do
-    Worker.get(:walk_edges) |> Map.get(stop_id, [])
+    Cache.get(:walk_edges) |> Map.get(stop_id, [])
   end
 
-  @doc """
-  Given a date, get a list of active service IDs on that date.
-  """
-  @spec date_services(Date.t()) :: [Type.service_id()]
-  def date_services(date) do
-    Worker.get(:date_services) |> Map.get(date, [])
+  @doc "Given a date, get a list of active service IDs on that date."
+  @spec date_service(Date.t()) :: Type.service()
+  def date_service(date) do
+    :service_by_date |> Cache.get() |> Map.get(date, [])
   end
 
   @doc "Get a trip headsign from its ID."
   @spec trip_headsign(Type.trip_id()) :: String.t() | nil
   def trip_headsign(trip_id) do
-    Worker.get(:trip_headsigns) |> Map.get(trip_id, nil)
+    Cache.get(:trip_headsigns) |> Map.get(trip_id, nil)
+  end
+
+  @doc """
+  Get a list of trip IDs.
+
+  Optional parameter to filter by date. If not provided, returns all trips.
+  """
+  @spec trip_ids(Date.t()) :: [Type.trip_id()]
+  def trip_ids(date) do
+    date
+    |> date_service()
+    |> Enum.flat_map(
+      &(:trip_ids_by_service
+        |> Cache.get()
+        |> Map.get(&1, []))
+    )
+  end
+
+  @spec trip_ids() :: [Type.trip_id()]
+  def trip_ids() do
+    :trip_ids_by_service
+    |> Cache.get()
+    |> Map.values()
+    |> List.flatten()
   end
 
   @doc """
@@ -58,23 +81,30 @@ defmodule TranslinkDb.Data.Static do
 
   Ride edges depends on date, the 2nd argument is the
   list of active service IDs on the date of interest.
-  Use `date_services/1` to get that list, like this:
+  Use `date_service/1` to get that list, like this:
 
   ```
-  ride_edges(stop_id, date_services(date))
+  ride_edges(stop_id, date_service(date))
   ```
 
   This 2-step process (instead of `ride_edges(stop_id, date)`)
   is necessary for performance.
   """
-  @spec ride_edges(Type.stop_id(), [Type.service_id()]) :: [Type.ride_edge()]
-  def ride_edges(stop_id, date_services) do
-    edges_by_service = Worker.get(:ride_edges)
-
+  @spec ride_edges(Type.stop_id(), Type.service()) :: [Type.ride_edge()]
+  def ride_edges(stop_id, service) do
     Enum.flat_map(
-      date_services,
-      &(edges_by_service |> Map.get(&1, %{}) |> Map.get(stop_id, []))
+      service,
+      &(:ride_edges_by_service
+        |> Cache.get()
+        |> Map.get(&1, %{})
+        |> Map.get(stop_id, []))
     )
+  end
+
+  @doc "Get a list of all stop IDs."
+  @spec stop_ids() :: [Type.stop_id()]
+  def stop_ids() do
+    :stop_id_by_code |> Cache.get() |> Map.values()
   end
 
   @doc """
@@ -85,7 +115,7 @@ defmodule TranslinkDb.Data.Static do
   """
   @spec stop_id_by_code(Type.stop_code()) :: Type.stop_id() | nil
   def stop_id_by_code(code) do
-    Worker.get(:stop_id_by_code) |> Map.get(code)
+    :stop_id_by_code |> Cache.get() |> Map.get(code)
   end
 
   @doc """
@@ -113,7 +143,8 @@ defmodule TranslinkDb.Data.Static do
   def stop_ids_by_name(searched_name) do
     searched_name = Name.normalize(searched_name)
 
-    Worker.get(:stop_ids_by_name)
+    :stop_ids_by_name
+    |> Cache.get()
     |> Enum.map(fn {stop_name, stop_ids} ->
       Task.async(fn ->
         %{
@@ -126,9 +157,8 @@ defmodule TranslinkDb.Data.Static do
     |> Enum.group_by(& &1.match, & &1.stop_ids)
     |> Enum.sort_by(fn {match, _ids_groups} -> match end, :desc)
     |> then(
-      &case &1 do
-        [{_match, ids_groups} | _] -> Enum.concat(ids_groups)
-        [] -> []
+      &with [{_match, ids_groups} | _] <- &1 do
+        Enum.concat(ids_groups)
       end
     )
   end
@@ -136,6 +166,6 @@ defmodule TranslinkDb.Data.Static do
   @doc "Get a stop name from its ID."
   @spec stop_name(Type.stop_id()) :: String.t()
   def stop_name(id) do
-    Worker.get(:stop_names) |> Map.get(id)
+    :stop_names |> Cache.get() |> Map.get(id)
   end
 end

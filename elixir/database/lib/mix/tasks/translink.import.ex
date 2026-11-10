@@ -3,6 +3,7 @@ defmodule Mix.Tasks.Translink.Import do
 
   @impl true
   def run([]) do
+    Application.put_env(:translink_db, :start_services, false)
     Mix.Task.run("app.start")
 
     case TranslinkDb.Importer.run() do

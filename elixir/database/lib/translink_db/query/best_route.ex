@@ -1,4 +1,5 @@
-alias TranslinkDb.{Data.Static, Data.Type, Util.Time}
+alias TranslinkDb.Data.{Static, Type}
+alias TranslinkDb.Util.Time
 
 defmodule TranslinkDb.Query.BestRoute do
   defmodule Edge do
@@ -176,13 +177,13 @@ defmodule TranslinkDb.Query.BestRoute do
   end
 
   @doc """
-  Find the best route from `from` to `to`, departing at `{:departure, t}`.
+  Find the best route from `&1` to `&2`, departing at `&3 = {:departure, t}`.
   Time is optional, default to now.
 
   Source and target can either be stop codes
   (the number printed on bus stop signs) or stop names.
   When querying with names, `TranslinkDb.Data.Static.stop_ids_by_name/1` is used
-  to resolve the name into a list of matched stop IDs.
+  to resolve the name into a list of matched stops.
   The result is the best route from/to any of the stops in the list.
 
   For example, `find("YVR", "SFU")` means finding the best route
@@ -203,7 +204,7 @@ defmodule TranslinkDb.Query.BestRoute do
 
   See the doc for `TranslinkDb.Data.Static.stop_ids_by_name/1`.
   """
-  def find(from, to, time \\ {:departure, DateTime.now!("Canada/Pacific")})
+  def find(from, to, time \\ {:departure, Time.now()})
 
   def find(from, to, {:departure, departure}) do
     with {:ok, from_stop_ids} <- resolve_stop_id(from),
@@ -212,7 +213,7 @@ defmodule TranslinkDb.Query.BestRoute do
       # TODO: handle overnight trips. For now only the departure date counts.
       # (It'll miss overnight service from the previous day, or if
       # the departure is late at night, services on the next day.)
-      date_services = Static.date_services(depature_date)
+      service = Static.date_service(depature_date)
 
       current = %Node{
         stop_id: List.first(from_stop_ids),
@@ -231,7 +232,7 @@ defmodule TranslinkDb.Query.BestRoute do
         )
         |> Enum.reduce(NodePQ.new(), &NodePQ.update/2)
 
-      case search(current, priority_queue, to_stop_ids, date_services) do
+      case search(current, priority_queue, to_stop_ids, service) do
         :no_path ->
           "No path"
 
@@ -269,13 +270,13 @@ defmodule TranslinkDb.Query.BestRoute do
          current = %Node{stop_id: stop_id, best_arrival: best_arrival},
          priority_queue,
          to_stop_ids,
-         date_services
+         service
        ) do
     if stop_id in to_stop_ids do
       Node.construct_path(current)
     else
       stop_id
-      |> edges(date_services, {:departure, best_arrival})
+      |> edges(service, {:departure, best_arrival})
       |> Enum.map(
         &%Node{
           best_arrival: &1.to_arrival,
@@ -287,7 +288,7 @@ defmodule TranslinkDb.Query.BestRoute do
       |> NodePQ.pop()
       |> then(
         &case &1 do
-          {next, next_pq} -> search(next, next_pq, to_stop_ids, date_services)
+          {next, next_pq} -> search(next, next_pq, to_stop_ids, service)
           :empty -> :no_path
         end
       )
@@ -310,11 +311,11 @@ defmodule TranslinkDb.Query.BestRoute do
     end
   end
 
-  @spec edges(Type.stop_id(), [Type.service_id()], {:depature, Type.seconds()}) :: [Edge.t()]
-  defp edges(stop_id, services, {:departure, seconds}) do
+  @spec edges(Type.stop_id(), Type.service(), {:depature, Type.seconds()}) :: [Edge.t()]
+  defp edges(stop_id, service, {:departure, seconds}) do
     ride_edges =
       stop_id
-      |> Static.ride_edges(services)
+      |> Static.ride_edges(service)
       |> Enum.map(&struct(Edge, &1))
 
     walk_edges =

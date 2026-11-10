@@ -1,18 +1,20 @@
-## Setup
+# TranslinkDb
+
+## Initial setup
 
 ```sh
 mix setup
 ```
 
-Database is hardcoded as `translink_db`, belonging to your regular user.
+This creates the postgres DB and populates it with the static data.
+DB name is hardcoded as `translink_db`, belonging to your regular user.
 
-## Testing
+## Usage
 
-```sh
-iex -S mix
-```
+- Start the realtime fetcher. Follow instructions in `../realtime_fetcher/readme.md`
+- Start the DB with `mix start` or inside IEx with `iex -S mix`
 
-Example:
+## API
 
 ```ex
 TranslinkDb.Query.BestRoute.find(

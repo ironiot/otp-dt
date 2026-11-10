@@ -5,7 +5,7 @@ defmodule Api.Application do
 
   use Application
 
-  @table    Api.Table
+  @table Api.Table
   @registry TranslinkDb.Registry
 
   @impl true
@@ -24,13 +24,19 @@ defmodule Api.Application do
     ]
 
     System.cmd("epmd", ["-daemon"])
-    Node.start(:api, name_domain: :shortnames)
-    Node.connect(System.get_env("DB_HOST") |> String.to_atom)
     :ets.new(@table, [:set, :public, :named_table])
-    # See https://elixir.hexdocs.pm/Supervisor.html
-    # for other strategies and supported options
-    opts = [strategy: :one_for_one, name: Api.Supervisor]
-    Supervisor.start_link(children, opts)
+
+    with {:ok, _} <- Node.start(:"api@127.0.0.1", :longnames),
+         with(true <- Node.connect(:"db@127.0.0.1")) do
+      Supervisor.start_link(
+        children,
+        strategy: :one_for_one,
+        name: Api.Supervisor
+      )
+    else
+      {:error, node_start_error} -> {:error, node_start_error}
+      false -> {:error, "Failed to connect to TranslinkDb"}
+    end
   end
 
   # Tell Phoenix to update the endpoint configuration

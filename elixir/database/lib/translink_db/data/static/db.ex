@@ -3,8 +3,8 @@ alias TranslinkDb.Schema.{Service, Station, StopTime, Stop, StopTransfer, Trip}
 alias TranslinkDb.Util.Name
 import Ecto.Query
 
-defmodule TranslinkDb.Data.Static.Loader do
-  @moduledoc "Util module for loading static data from DB"
+defmodule TranslinkDb.Data.Static.DB do
+  @moduledoc "Util module for direct DB queries for static data"
 
   def walk_edges() do
     # TODO:
@@ -15,8 +15,8 @@ defmodule TranslinkDb.Data.Static.Loader do
       group_by: transfer.from_stop_id,
       select: {
         transfer.from_stop_id,
-        fragment("array_agg(?)", transfer.to_stop_id),
-        fragment("array_agg(?)", transfer.seconds)
+        "array_agg(?)" |> fragment(transfer.to_stop_id),
+        "array_agg(?)" |> fragment(transfer.seconds)
       }
     )
     |> Repo.all()
@@ -41,13 +41,13 @@ defmodule TranslinkDb.Data.Static.Loader do
     |> Map.new()
   end
 
-  def date_services() do
+  def service_by_date() do
     from(
       service in Service,
       group_by: service.date,
       select: {
         service.date,
-        fragment("array_agg(?)", service.id)
+        "array_agg(?)" |> fragment(service.id)
       }
     )
     |> Repo.all()
@@ -91,7 +91,10 @@ defmodule TranslinkDb.Data.Static.Loader do
         join: station in Station,
         on: stop.id == station.id,
         group_by: station.name,
-        select: {station.name, fragment("array_agg(?)", stop.id)}
+        select: {
+          station.name,
+          "array_agg(?)" |> fragment(stop.id)
+        }
       )
       |> Repo.all()
       |> Map.new(fn {name, stop_ids} -> {Name.normalize(name), stop_ids} end)
@@ -105,16 +108,31 @@ defmodule TranslinkDb.Data.Static.Loader do
     end)
   end
 
+  def trip_ids_by_service() do
+    from(
+      trip in Trip,
+      join: service in Service,
+      on: trip.service_id == service.id,
+      group_by: service.id,
+      select: {
+        service.id,
+        "array_agg(distinct ?)" |> fragment(trip.id)
+      }
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
   @ride_edge_buckets 256
 
-  def ride_edges() do
+  def ride_edges_by_service() do
     buckets =
       from(
         trip in Trip,
         windows: [by_id: [order_by: trip.id]],
         select: %{
           trip_id: trip.id,
-          bucket: over(fragment("ntile(?)", ^@ride_edge_buckets), :by_id)
+          bucket: "ntile(?)" |> fragment(^@ride_edge_buckets) |> over(:by_id)
         }
       )
 
@@ -130,18 +148,6 @@ defmodule TranslinkDb.Data.Static.Loader do
       timeout: :infinity
     )
     |> Enum.reduce(%{}, &merge_buckets/2)
-  end
-
-  defp merge_buckets({:ok, bucket}, acc) do
-    Map.merge(bucket, acc, fn _service_id, bucket_stops, acc_stops ->
-      Map.merge(bucket_stops, acc_stops, fn _from_stop_id, bucket_rows, acc_rows ->
-        bucket_rows ++ acc_rows
-      end)
-    end)
-  end
-
-  defp merge_buckets({:exit, reason}, _acc) do
-    raise "ride_edges bucket failed: #{inspect(reason)}"
   end
 
   defp ride_edges_bucket({from_trip_id, to_trip_id}) do
@@ -161,9 +167,11 @@ defmodule TranslinkDb.Data.Static.Loader do
           service_id: trip.service_id,
           trip_id: stop.trip_id,
           from_stop_id: stop.stop_id,
-          to_stop_id: lead(stop.stop_id) |> over(:trip),
+          from_stop_sequence: stop.stop_sequence,
           from_departure: stop.departure,
-          to_arrival: lead(stop.arrival) |> over(:trip)
+          to_stop_id: stop.stop_id |> lead() |> over(:trip),
+          to_stop_sequence: stop.stop_sequence |> lead() |> over(:trip),
+          to_arrival: stop.arrival |> lead() |> over(:trip)
         }
       )
 
@@ -173,31 +181,47 @@ defmodule TranslinkDb.Data.Static.Loader do
       group_by: [row.service_id, row.from_stop_id],
       select: {
         row.service_id,
+        "array_agg(?)" |> fragment(row.trip_id),
         row.from_stop_id,
-        fragment("array_agg(?)", row.trip_id),
-        fragment("array_agg(?)", row.to_stop_id),
-        fragment("array_agg(?)", row.from_departure),
-        fragment("array_agg(?)", row.to_arrival)
+        "array_agg(?)" |> fragment(row.from_stop_sequence),
+        "array_agg(?)" |> fragment(row.from_departure),
+        "array_agg(?)" |> fragment(row.to_stop_id),
+        "array_agg(?)" |> fragment(row.to_stop_sequence),
+        "array_agg(?)" |> fragment(row.to_arrival)
       }
     )
     |> Repo.all()
     |> Enum.group_by(&elem(&1, 0))
     |> Map.new(fn {service_id, groups} ->
       {service_id,
-       Map.new(groups, fn {_service_id, from_stop_id, trip_ids, to_stop_ids, departures, arrivals} ->
+       Map.new(groups, fn {_service_id, trip_ids, from_stop_id, from_sequences, departures,
+                           to_stop_ids, to_sequences, arrivals} ->
          {from_stop_id,
-          [trip_ids, to_stop_ids, departures, arrivals]
-          |> Enum.zip()
-          |> Enum.map(fn {trip_id, to_stop_id, from_departure, to_arrival} ->
-            %{
+          Enum.zip_with(
+            [trip_ids, from_sequences, departures, to_stop_ids, to_sequences, arrivals],
+            &%{
+              trip_id: &1 |> Enum.at(0),
               from_stop_id: from_stop_id,
-              trip_id: trip_id,
-              to_stop_id: to_stop_id,
-              from_departure: from_departure,
-              to_arrival: to_arrival
+              from_stop_sequence: &1 |> Enum.at(1),
+              from_departure: &1 |> Enum.at(2),
+              to_stop_id: &1 |> Enum.at(3),
+              to_stop_sequence: &1 |> Enum.at(4),
+              to_arrival: &1 |> Enum.at(5)
             }
-          end)}
+          )}
        end)}
     end)
+  end
+
+  defp merge_buckets({:ok, bucket}, acc) do
+    Map.merge(bucket, acc, fn _service_id, bucket_stops, acc_stops ->
+      Map.merge(bucket_stops, acc_stops, fn _from_stop_id, bucket_rows, acc_rows ->
+        bucket_rows ++ acc_rows
+      end)
+    end)
+  end
+
+  defp merge_buckets({:exit, reason}, _acc) do
+    raise "ride_edges bucket failed: #{inspect(reason)}"
   end
 end

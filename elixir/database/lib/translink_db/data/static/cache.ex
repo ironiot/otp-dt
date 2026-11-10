@@ -1,6 +1,6 @@
-alias TranslinkDb.Data.Static.Loader
+alias TranslinkDb.Data.Static.DB
 
-defmodule TranslinkDb.Data.Static.Worker do
+defmodule TranslinkDb.Data.Static.Cache do
   @moduledoc "Load static data from DB to `:persistent_term` on start, then exit."
 
   use GenServer
@@ -39,7 +39,10 @@ defmodule TranslinkDb.Data.Static.Worker do
 
   @impl true
   def handle_continue(:load, name) do
-    :persistent_term.put(name, apply(Loader, name, []))
+    DB
+    |> apply(name, [])
+    |> then(&:persistent_term.put(name, &1))
+
     {:stop, :normal, name}
   end
 end

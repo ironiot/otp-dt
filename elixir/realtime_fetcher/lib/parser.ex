@@ -27,53 +27,41 @@ defmodule TranslinkFetcher.Parser do
     with %{trip: trip, stop_time_update: stop_time_update} <- trip_update,
          {:ok, trip_id} <- parse_id(trip.trip_id),
          {:ok, trip_date} <- parse_date(trip.start_date) do
-      :ets.insert(
-        :trip_updates,
-        {trip_id,
-         %{
-           update_time: update_time,
-           trip_id: trip_id,
-           date: trip_date,
-           cancelled:
-             case trip.schedule_relationship do
-               nil -> nil
-               :CANCELLED -> true
-               _ -> false
-             end
-         }}
-      )
-
-      stop_time_update
-      |> Enum.filter(&(&1.stop_id != nil && &1.stop_sequence != nil))
-      |> Enum.each(
-        &with {:ok, stop_id} <- parse_id(&1.stop_id) do
-          :ets.insert(
-            :stop_updates,
-            {stop_id,
-             %{
-               update_time: update_time,
-               trip_id: trip_id,
-               date: trip_date,
-               stop_sequence: &1.stop_sequence,
-               skipped:
-                 case &1.schedule_relationship do
-                   nil -> nil
-                   :NO_DATA -> nil
-                   :SKIPPED -> true
-                   _ -> false
-                 end,
-               arrival_delay:
-                 with %{delay: delay} <- &1.arrival do
-                   delay
-                 end,
-               departure_delay:
-                 with %{delay: delay} <- &1.departure do
-                   delay
-                 end
-             }}
+      %{
+        update_time: update_time,
+        trip_id: trip_id,
+        date: trip_date,
+        cancelled:
+          case trip.schedule_relationship do
+            nil -> nil
+            :CANCELLED -> true
+            _ -> false
+          end,
+        stops:
+          stop_time_update
+          |> Enum.filter(&(&1.stop_sequence != nil))
+          |> Enum.map(
+            &%{
+              stop_sequence: &1.stop_sequence,
+              skipped:
+                case &1.schedule_relationship do
+                  nil -> nil
+                  :NO_DATA -> nil
+                  :SKIPPED -> true
+                  _ -> false
+                end,
+              arrival_delay:
+                with %{delay: delay} <- &1.arrival do
+                  delay
+                end,
+              departure_delay:
+                with %{delay: delay} <- &1.departure do
+                  delay
+                end
+            }
           )
-        end
-      )
+      }
+      |> then(&:ets.insert(:updates, {trip_id, &1}))
     end
   end
 

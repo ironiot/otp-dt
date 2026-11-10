@@ -7,6 +7,6 @@ defmodule TranslinkDb.Schema.RtTrip do
   schema "rt_trip" do
     belongs_to(:trip, TranslinkDb.Schema.Trip, primary_key: true)
     field(:date, :date, primary_key: true)
-    field(:cancelled, :boolean, default: false)
+    field(:cancelled, :boolean)
   end
 end

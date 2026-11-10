@@ -1,17 +1,40 @@
+# Realtime fetcher
+
+A script to call TransLink API every 2 minutes, fetch and parses the data,
+and store it in memory.
+
 ## Usage
 
-`iex -S mix` starts the app. Every 2 minutes,
-it fetches new GTFS realtime data, parses and stores it in local ETS tables.
+```sh
+mix start
+```
 
-Users call `TranslinkFetcher.get_trip_updates(trip_id)` and `TranslinkFetcher.get_stop_updates(stop_id)`
-and receive only the relevant data to that trip/stop.
-These functions block until data arrives (could take upto 2 minutes).
+## API
 
-If these functions are called in larger than 2 minutes interval,
-multiple updates may be returned. It's the caller's responsibility to handle this.
+```ex
+GenServer.call({:global, TranslinkFetcher}, trip_id, timeout)
+# Return type:
+# [
+#   %{
+#     update_time: integer(),
+#     trip_id: integer(),
+#     date: Date.t(),
+#     cancelled: boolean() | nil,
+#     stops: [
+#       %{
+#         stop_sequence: integer(),
+#         skipped: boolean() | nil,
+#         arrival_delay: integer() | nil,
+#         departure_delay: integer() | nil
+#        }
+#     ]
+#   }
+# ]
+```
 
-See `TranslinkDb.Data.Realtime.Updater.{Stop, Trip}` for usage.
+Returns an array because multiple fetches may have occurred
+since the last call; all of them will be returned.
+Caller is responsible for merging/deduping the updates.
 
-## Structure of realtime data
-
-See `elixir/database/ERD.svg`
+This call may block for upto 2 minutes to wait for the next fetch;
+caller should apply appropriate timeout or catch the exception.
