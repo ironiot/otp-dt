@@ -1,6 +1,6 @@
 alias TranslinkDb.Repo
 alias TranslinkDb.Schema.{Service, Station, StopTime, Stop, StopTransfer, Trip}
-alias TranslinkDb.Utils.Name
+alias TranslinkDb.Util.Name
 import Ecto.Query
 
 defmodule TranslinkDb.Data.Static.Loader do

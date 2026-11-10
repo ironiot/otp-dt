@@ -1,4 +1,4 @@
-alias TranslinkDb.{Data.Type, Data.Static.Worker, Utils.Name}
+alias TranslinkDb.{Data.Type, Data.Static.Worker, Util.Name}
 import ExFuzzywuzzy
 
 defmodule TranslinkDb.Data.Static do

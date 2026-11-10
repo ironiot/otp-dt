@@ -1,4 +1,4 @@
-alias TranslinkDb.{Data.Static, Data.Type, Utils.Time}
+alias TranslinkDb.{Data.Static, Data.Type, Util.Time}
 
 defmodule TranslinkDb.Query.BestRoute do
   defmodule Edge do
