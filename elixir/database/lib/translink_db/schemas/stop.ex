@@ -1,4 +1,4 @@
-defmodule TranslinkDb.Schemas.Stop do
+defmodule TranslinkDb.Schema.Stop do
   use Ecto.Schema
 
   @primary_key {:id, :integer, autogenerate: false}
@@ -10,12 +10,12 @@ defmodule TranslinkDb.Schemas.Stop do
     field(:latitude, :float)
     field(:longitude, :float)
 
-    belongs_to(:station, TranslinkDb.Schemas.Station)
+    belongs_to(:station, TranslinkDb.Schema.Station)
 
-    has_many(:stop_times, TranslinkDb.Schemas.StopTime)
-    has_many(:trip_transfers, TranslinkDb.Schemas.TripTransfer)
+    has_many(:stop_times, TranslinkDb.Schema.StopTime)
+    has_many(:trip_transfers, TranslinkDb.Schema.TripTransfer)
 
-    has_many(:outgoing_transfers, TranslinkDb.Schemas.StopTransfer, foreign_key: :from_stop_id)
-    has_many(:incoming_transfers, TranslinkDb.Schemas.StopTransfer, foreign_key: :to_stop_id)
+    has_many(:outgoing_transfers, TranslinkDb.Schema.StopTransfer, foreign_key: :from_stop_id)
+    has_many(:incoming_transfers, TranslinkDb.Schema.StopTransfer, foreign_key: :to_stop_id)
   end
 end

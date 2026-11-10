@@ -1,6 +1,6 @@
 defmodule TranslinkDb.Importer.Trip do
   alias TranslinkDb.Importer.{Batch, CSV, Parser}
-  alias TranslinkDb.Schemas.Trip
+  alias TranslinkDb.Schema.Trip
 
   @spec import_data(map()) :: :ok
   def import_data(feed) do

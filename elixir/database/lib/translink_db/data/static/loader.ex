@@ -1,5 +1,5 @@
 alias TranslinkDb.Repo
-alias TranslinkDb.Schemas.{Service, Station, StopTime, Stop, StopTransfer, Trip}
+alias TranslinkDb.Schema.{Service, Station, StopTime, Stop, StopTransfer, Trip}
 alias TranslinkDb.Utils.Name
 import Ecto.Query
 

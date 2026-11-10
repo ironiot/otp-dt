@@ -1,6 +1,6 @@
 defmodule TranslinkDb.Importer.Service do
   alias TranslinkDb.Importer.{Batch, CSV, Parser}
-  alias TranslinkDb.Schemas.Service
+  alias TranslinkDb.Schema.Service
 
   @weekdays ~w(monday tuesday wednesday thursday friday saturday sunday)
 

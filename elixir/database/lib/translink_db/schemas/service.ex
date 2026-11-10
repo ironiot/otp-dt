@@ -1,4 +1,4 @@
-defmodule TranslinkDb.Schemas.Service do
+defmodule TranslinkDb.Schema.Service do
   use Ecto.Schema
 
   @primary_key false

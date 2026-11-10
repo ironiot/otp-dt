@@ -1,4 +1,4 @@
-defmodule TranslinkDb.Schemas.Station do
+defmodule TranslinkDb.Schema.Station do
   use Ecto.Schema
 
   @primary_key {:id, :integer, autogenerate: false}
@@ -9,6 +9,6 @@ defmodule TranslinkDb.Schemas.Station do
     field(:latitude, :float)
     field(:longitude, :float)
 
-    has_many(:stops, TranslinkDb.Schemas.Stop)
+    has_many(:stops, TranslinkDb.Schema.Stop)
   end
 end

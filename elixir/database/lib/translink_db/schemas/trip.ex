@@ -1,4 +1,4 @@
-defmodule TranslinkDb.Schemas.Trip do
+defmodule TranslinkDb.Schema.Trip do
   use Ecto.Schema
 
   @primary_key {:id, :integer, autogenerate: false}
@@ -8,12 +8,12 @@ defmodule TranslinkDb.Schemas.Trip do
     field(:headsign, :string)
     field(:service_id, :integer)
 
-    has_many(:stop_times, TranslinkDb.Schemas.StopTime)
+    has_many(:stop_times, TranslinkDb.Schema.StopTime)
 
-    has_many(:outgoing_trip_transfers, TranslinkDb.Schemas.TripTransfer,
+    has_many(:outgoing_trip_transfers, TranslinkDb.Schema.TripTransfer,
       foreign_key: :from_trip_id
     )
 
-    has_many(:incoming_trip_transfers, TranslinkDb.Schemas.TripTransfer, foreign_key: :to_trip_id)
+    has_many(:incoming_trip_transfers, TranslinkDb.Schema.TripTransfer, foreign_key: :to_trip_id)
   end
 end
