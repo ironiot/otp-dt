@@ -275,7 +275,7 @@ defmodule TranslinkDb.Query.BestRoute do
       Node.construct_path(current)
     else
       stop_id
-      |> edges(date_services, best_arrival)
+      |> edges(date_services, {:departure, best_arrival})
       |> Enum.map(
         &%Node{
           best_arrival: &1.to_arrival,
@@ -310,8 +310,8 @@ defmodule TranslinkDb.Query.BestRoute do
     end
   end
 
-  @spec edges(Type.stop_id(), [Type.service_id()], Type.seconds()) :: [Edge.t()]
-  defp edges(stop_id, services, seconds) do
+  @spec edges(Type.stop_id(), [Type.service_id()], {:depature, Type.seconds()}) :: [Edge.t()]
+  defp edges(stop_id, services, {:departure, seconds}) do
     ride_edges =
       stop_id
       |> Static.ride_edges(services)
