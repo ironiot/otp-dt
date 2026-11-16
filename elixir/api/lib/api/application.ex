@@ -27,7 +27,7 @@ defmodule Api.Application do
     :ets.new(@table, [:set, :public, :named_table])
 
     with {:ok, _} <- Node.start(:"api@127.0.0.1", :longnames),
-         with(true <- Node.connect(:"db@127.0.0.1")) do
+         true <- Node.connect(:"db@127.0.0.1") do
       Supervisor.start_link(
         children,
         strategy: :one_for_one,
