@@ -3,6 +3,10 @@
 A script to call TransLink API every 2 minutes, fetch and parses the data,
 and store it in memory.
 
+## Prerequisite
+
+You need Translink API key. Save it to env var `TRANSLINK_API_KEY`.
+
 ## Usage
 
 ```sh
