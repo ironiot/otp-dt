@@ -15,8 +15,9 @@ defmodule TranslinkFetcher do
 
   @impl true
   def init(_) do
-    # Act as a queue, potentially holding multiple updates.
-    # `get_updates` will block until data is available, then clear the queue.
+    # Act as a queue, potentially holding multiple updates for each trip.
+    # `GenServer.call({:global, TranslinkFetcher}, trip_id)` will block
+    # until the queue is not empty, then return everything in the queue and clear it.
     :updates |> :ets.new([:bag, :named_table, :private])
     {:ok, [], {:continue, :fetch}}
   end
