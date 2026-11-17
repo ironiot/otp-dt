@@ -44,18 +44,18 @@ defmodule TranslinkDb.Data.Realtime.Cache do
   def get(table, date) do
     case :ets.lookup(table, date) do
       [{^date, updates}] ->
-        send(__MODULE__, {:used, table, date})
+        GenServer.cast(__MODULE__, {table, date})
         updates
 
       [] ->
-        GenServer.call(__MODULE__, {:load, table, date}, :infinity)
+        GenServer.call(__MODULE__, {table, date}, :infinity)
     end
   end
 
   @spec update(:trips_cancelled, Date.t(), Type.trips_cancelled()) :: :ok
   @spec update(:stops_status, Date.t(), incoming_stops_status()) :: :ok
   def update(table, date, updates) do
-    GenServer.call(__MODULE__, {:update, table, date, updates}, :infinity)
+    GenServer.cast(__MODULE__, {table, date, updates})
   end
 
   @impl true
@@ -74,63 +74,30 @@ defmodule TranslinkDb.Data.Realtime.Cache do
   end
 
   @impl true
-  @spec handle_info({:used, table(), Date.t()}, next_eviction()) ::
+  @spec handle_cast({table(), Date.t()}, next_eviction()) ::
           {:noreply, next_eviction()}
-  def handle_info({:used, table, date}, next_eviction) do
+  def handle_cast({table, date}, next_eviction) do
     mark_used(table, date)
     {:noreply, next_eviction |> rotate(table, date)}
   end
 
   @impl true
-  @spec handle_call(
-          {:load, :trips_cancelled, Date.t()},
-          GenServer.from(),
-          next_eviction()
-        ) :: {:reply, Type.trips_cancelled(), next_eviction()}
-  @spec handle_call(
-          {:load, :stops_status, Date.t()},
-          GenServer.from(),
-          next_eviction()
-        ) :: {:reply, Type.stops_status(), next_eviction()}
-  def handle_call({:load, table, date}, _from, next_eviction) do
-    load(date)
-
-    # These tables have the same size so can check either one
-    if :ets.info(:trips_cancelled, :size) > @max_size do
-      Enum.each(
-        [:trip_cancelled, :stops_status],
-        fn table ->
-          next_eviction
-          |> Map.get(table)
-          |> find_lru(table)
-          |> tap(&:ets.delete(table, &1))
-          |> tap(&mark_unused(table, &1))
-        end
-      )
-    end
-
-    {:reply, get(table, date), next_eviction |> rotate(table, date)}
-  end
-
-  @impl true
-  @spec handle_call(
-          {:update, :trips_cancelled, Date.t(), Type.trips_cancelled()},
-          GenServer.from(),
+  @spec handle_cast(
+          {:trips_cancelled, Date.t(), Type.trips_cancelled()},
           next_eviction()
         ) :: {:reply, :ok, next_eviction()}
-  def handle_call({:update, :trips_cancelled, date, trips_cancelled}, _, next_eviction) do
+  def handle_cast({:trips_cancelled, date, trips_cancelled}, next_eviction) do
     DB.update_trips(date, trips_cancelled)
     mark_used(:trips_cancelled, date)
-    {:reply, :ok, next_eviction}
+    {:noreply, next_eviction}
   end
 
   @impl true
-  @spec handle_call(
-          {:update, :stops_status, Date.t(), incoming_stops_status()},
-          GenServer.from(),
+  @spec handle_cast(
+          {:stops_status, Date.t(), incoming_stops_status()},
           next_eviction()
-        ) :: {:reply, :ok, next_eviction()}
-  def handle_call({:update, :stops_status, date, updates}, _, next_eviction) do
+        ) :: {:noreply, next_eviction()}
+  def handle_cast({:stops_status, date, updates}, next_eviction) do
     merge_nullable = fn _k, old_v, new_v ->
       case new_v do
         nil -> old_v
@@ -160,7 +127,38 @@ defmodule TranslinkDb.Data.Realtime.Cache do
 
     DB.update_stops(date, stops_status)
     mark_used(:stops_status, date)
-    {:reply, :ok, next_eviction}
+    {:noreply, next_eviction}
+  end
+
+  @impl true
+  @spec handle_call(
+          {:trips_cancelled, Date.t()},
+          GenServer.from(),
+          next_eviction()
+        ) :: {:reply, Type.trips_cancelled(), next_eviction()}
+  @spec handle_call(
+          {:stops_status, Date.t()},
+          GenServer.from(),
+          next_eviction()
+        ) :: {:reply, Type.stops_status(), next_eviction()}
+  def handle_call({table, date}, _from, next_eviction) do
+    load(date)
+
+    # These tables have the same size so can check either one
+    if :ets.info(:trips_cancelled, :size) > @max_size do
+      Enum.each(
+        [:trip_cancelled, :stops_status],
+        fn table ->
+          next_eviction
+          |> Map.get(table)
+          |> find_lru(table)
+          |> tap(&:ets.delete(table, &1))
+          |> tap(&mark_unused(table, &1))
+        end
+      )
+    end
+
+    {:reply, get(table, date), next_eviction |> rotate(table, date)}
   end
 
   @spec load(Date.t()) :: any()
