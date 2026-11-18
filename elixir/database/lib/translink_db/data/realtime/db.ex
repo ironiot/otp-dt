@@ -1,6 +1,7 @@
 alias TranslinkDb.Repo
 alias TranslinkDb.Schema.{RtTrip, RtStopTime}
 alias TranslinkDb.Data.Type
+alias TranslinkDb.Util.Batch
 import Ecto.Query
 
 defmodule TranslinkDb.Data.Realtime.DB do
@@ -52,6 +53,11 @@ defmodule TranslinkDb.Data.Realtime.DB do
 
   @spec update_trips(Date.t(), Type.trips_cancelled()) :: any()
   def update_trips(date, trips_cancelled) do
+    opts = [
+      on_conflict: :replace_all,
+      conflict_target: [:trip_id, :date]
+    ]
+
     trips_cancelled
     |> Enum.map(fn {trip_id, cancelled} ->
       %{
@@ -60,13 +66,16 @@ defmodule TranslinkDb.Data.Realtime.DB do
         cancelled: cancelled
       }
     end)
-    |> then(
-      &Repo.insert_all(RtTrip, &1, on_conflict: :replace_all, conflict_target: [:trip_id, :date])
-    )
+    |> then(&Batch.insert_all(RtTrip, &1, opts))
   end
 
   @spec update_stops(Date.t(), Type.stops_status()) :: any()
   def update_stops(date, stops_status) do
+    opts = [
+      on_conflict: :replace_all,
+      conflict_target: [:trip_id, :stop_sequence, :date]
+    ]
+
     stops_status
     |> Enum.flat_map(fn {trip_id, stops} ->
       Enum.map(stops, fn {stop_sequence, update} ->
@@ -77,11 +86,6 @@ defmodule TranslinkDb.Data.Realtime.DB do
         })
       end)
     end)
-    |> then(
-      &Repo.insert_all(RtStopTime, &1,
-        on_conflict: :replace_all,
-        conflict_target: [:trip_id, :stop_sequence, :date]
-      )
-    )
+    |> then(&Batch.insert_all(RtStopTime, &1, opts))
   end
 end

@@ -1,5 +1,6 @@
 defmodule TranslinkDb.Importer.Service do
-  alias TranslinkDb.Importer.{Batch, CSV, Parser}
+  alias TranslinkDb.Util.Batch
+  alias TranslinkDb.Importer.{CSV, Parser}
   alias TranslinkDb.Schema.Service
 
   @weekdays ~w(monday tuesday wednesday thursday friday saturday sunday)
@@ -22,7 +23,7 @@ defmodule TranslinkDb.Importer.Service do
       |> apply_calendar_dates(Map.fetch!(feed, "calendar_dates.txt"))
       |> Enum.map(fn {id, date} -> %{id: id, date: date} end)
 
-    Batch.insert_in_batches(Service, services)
+    Batch.insert_all(Service, services)
   end
 
   defp parse_calendar_row(row) do

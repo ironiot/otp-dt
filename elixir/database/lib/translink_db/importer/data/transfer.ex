@@ -1,5 +1,6 @@
 defmodule TranslinkDb.Importer.Transfer do
-  alias TranslinkDb.Importer.{Batch, CSV, Parser}
+  alias TranslinkDb.Util.Batch
+  alias TranslinkDb.Importer.{CSV, Parser}
   alias TranslinkDb.Schema.{StopTransfer, TripTransfer}
 
   @spec import_data(map()) :: :ok
@@ -24,8 +25,8 @@ defmodule TranslinkDb.Importer.Transfer do
         end
       end)
 
-    Batch.insert_in_batches(StopTransfer, Enum.reverse(stop_transfers))
-    Batch.insert_in_batches(TripTransfer, Enum.reverse(trip_transfers))
+    Batch.insert_all(StopTransfer, Enum.reverse(stop_transfers))
+    Batch.insert_all(TripTransfer, Enum.reverse(trip_transfers))
   end
 
   defp parse_row(row) do

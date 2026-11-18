@@ -1,5 +1,6 @@
 defmodule TranslinkDb.Importer.StopTime do
-  alias TranslinkDb.Importer.{Batch, CSV, Parser}
+  alias TranslinkDb.Util.Batch
+  alias TranslinkDb.Importer.{CSV, Parser}
   alias TranslinkDb.Schema.StopTime
 
   @spec import_data(map()) :: :ok
@@ -21,7 +22,7 @@ defmodule TranslinkDb.Importer.StopTime do
         end
       end)
 
-    Batch.insert_in_batches(StopTime, rows)
+    Batch.insert_all(StopTime, rows)
   end
 
   defp stop_time_attrs(row) do

@@ -1,5 +1,6 @@
 defmodule TranslinkDb.Importer.Trip do
-  alias TranslinkDb.Importer.{Batch, CSV, Parser}
+  alias TranslinkDb.Util.Batch
+  alias TranslinkDb.Importer.{CSV, Parser}
   alias TranslinkDb.Schema.Trip
 
   @spec import_data(map()) :: :ok
@@ -22,7 +23,7 @@ defmodule TranslinkDb.Importer.Trip do
       end)
       |> Enum.reverse()
 
-    Batch.insert_in_batches(Trip, trips)
+    Batch.insert_all(Trip, trips)
   end
 
   defp trip_attrs(row) do

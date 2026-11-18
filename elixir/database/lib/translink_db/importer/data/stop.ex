@@ -1,5 +1,6 @@
 defmodule TranslinkDb.Importer.Stop do
-  alias TranslinkDb.Importer.{Batch, CSV, Parser}
+alias TranslinkDb.Util.Batch
+  alias TranslinkDb.Importer.{CSV, Parser}
   alias TranslinkDb.Schema.{Station, Stop}
 
   @spec import_data(map()) :: :ok
@@ -27,8 +28,8 @@ defmodule TranslinkDb.Importer.Stop do
         end
       end)
 
-    Batch.insert_in_batches(Station, Enum.reverse(stations))
-    Batch.insert_in_batches(Stop, Enum.reverse(stops))
+    Batch.insert_all(Station, Enum.reverse(stations))
+    Batch.insert_all(Stop, Enum.reverse(stops))
   end
 
   defp parse_row(row) do
