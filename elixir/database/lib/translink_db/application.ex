@@ -2,6 +2,7 @@ defmodule TranslinkDb.Application do
   use Application
   @registry TranslinkDb.Registry
 
+  System.cmd("epmd", ["-daemon"])
   @impl true
   def start(_type, _args) do
     children =
