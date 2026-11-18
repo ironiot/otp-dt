@@ -16,7 +16,7 @@ defmodule TranslinkDb.Data.Realtime.Cache do
   use GenServer
   @max_size 24
 
-  @type table :: :trips_cancelled | :stops_status
+  @type table :: :trips_cancelled? | :stops_status
   @type next_eviction :: %{
           table() => %{Date.t() => boolean()}
         }
@@ -39,7 +39,7 @@ defmodule TranslinkDb.Data.Realtime.Cache do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
-  @spec get(:trips_cancelled, Date.t()) :: Type.trips_cancelled()
+  @spec get(:trips_cancelled?, Date.t()) :: Type.trips_cancelled?()
   @spec get(:stops_status, Date.t()) :: Type.stops_status()
   def get(table, date) do
     case :ets.lookup(table, date) do
@@ -52,7 +52,7 @@ defmodule TranslinkDb.Data.Realtime.Cache do
     end
   end
 
-  @spec update(:trips_cancelled, Date.t(), Type.trips_cancelled()) :: :ok
+  @spec update(:trips_cancelled?, Date.t(), Type.trips_cancelled?()) :: :ok
   @spec update(:stops_status, Date.t(), incoming_stops_status()) :: :ok
   def update(table, date, updates) do
     GenServer.cast(__MODULE__, {table, date, updates})
@@ -60,7 +60,7 @@ defmodule TranslinkDb.Data.Realtime.Cache do
 
   @impl true
   def init(_) do
-    :trips_cancelled |> :ets.new([:named_table, read_concurrency: true])
+    :trips_cancelled? |> :ets.new([:named_table, read_concurrency: true])
     :stops_status |> :ets.new([:named_table, read_concurrency: true])
     :recently_used |> :ets.new([:named_table, :private])
     {:ok, nil, {:continue, :load_today}}
@@ -83,12 +83,12 @@ defmodule TranslinkDb.Data.Realtime.Cache do
 
   @impl true
   @spec handle_cast(
-          {:trips_cancelled, Date.t(), Type.trips_cancelled()},
+          {:trips_cancelled?, Date.t(), Type.trips_cancelled?()},
           next_eviction()
         ) :: {:reply, :ok, next_eviction()}
-  def handle_cast({:trips_cancelled, date, trips_cancelled}, next_eviction) do
+  def handle_cast({:trips_cancelled?, date, trips_cancelled}, next_eviction) do
     DB.update_trips(date, trips_cancelled)
-    mark_used(:trips_cancelled, date)
+    mark_used(:trips_cancelled?, date)
     {:noreply, next_eviction}
   end
 
@@ -132,10 +132,10 @@ defmodule TranslinkDb.Data.Realtime.Cache do
 
   @impl true
   @spec handle_call(
-          {:trips_cancelled, Date.t()},
+          {:trips_cancelled?, Date.t()},
           GenServer.from(),
           next_eviction()
-        ) :: {:reply, Type.trips_cancelled(), next_eviction()}
+        ) :: {:reply, Type.trips_cancelled?(), next_eviction()}
   @spec handle_call(
           {:stops_status, Date.t()},
           GenServer.from(),
@@ -145,7 +145,7 @@ defmodule TranslinkDb.Data.Realtime.Cache do
     load(date)
 
     # These tables have the same size so can check either one
-    if :ets.info(:trips_cancelled, :size) > @max_size do
+    if :ets.info(:trips_cancelled?, :size) > @max_size do
       Enum.each(
         [:trip_cancelled, :stops_status],
         fn table ->
@@ -173,7 +173,7 @@ defmodule TranslinkDb.Data.Realtime.Cache do
       updates
       |> Map.new(fn {trip_id, update} -> {trip_id, update.stops} end)
 
-    :trips_cancelled
+    :trips_cancelled?
     |> tap(&:ets.insert(&1, {date, trips_cancelled}))
     |> tap(&mark_used(&1, date))
 

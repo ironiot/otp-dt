@@ -32,49 +32,6 @@ defmodule TranslinkDb.Data.Realtime.TripWorker do
     fetch_cycle(trip_id)
   end
 
-  # TODO: For a digital twin, we should simulate being able to
-  # - cancel a trip
-  # - skip a stop
-  # - delay a stop
-  # - query trip status
-
-  @impl true
-  def handle_call(:cancel, _from, _trip_id) do
-    # TODO
-  end
-
-  @impl true
-  @spec handle_call(
-          {:skip, Type.stop_sequence()},
-          GenServer.from(),
-          Type.trip_id()
-        ) :: {:reply, :ok, Type.trip_id()}
-  def handle_call({:skip, _stop_sequence}, _from, _trip_id) do
-    # TODO
-  end
-
-  @impl true
-  @spec handle_call(
-          {:delay, Type.stop_sequence(), Type.seconds()},
-          GenServer.from(),
-          Type.trip_id()
-        ) :: {:reply, :ok, Type.trip_id()}
-  def handle_call({:delay, _stop_sequence, _seconds}, _from, _trip_id) do
-    # TODO
-  end
-
-  @impl true
-  @spec handle_call(
-          :status,
-          GenServer.from(),
-          Type.trip_id()
-        ) :: {:reply, Type.trip_status(), Type.trip_id()}
-  def handle_call(:status, _from, _trip_id) do
-    # TODO
-    # Caller should catch no process error
-    # and interpret that as trip is not active.
-  end
-
   defp fetch_cycle(trip_id) do
     fetch(trip_id)
 
@@ -93,7 +50,7 @@ defmodule TranslinkDb.Data.Realtime.TripWorker do
     |> Enum.group_by(& &1.date)
     |> Enum.each(fn {date, updates} ->
       Cache.update(
-        :trips_cancelled,
+        :trips_cancelled?,
         date,
         Enum.reduce(updates, %{}, fn update, acc ->
           case update.cancelled do

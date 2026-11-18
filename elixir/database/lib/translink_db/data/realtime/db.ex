@@ -51,7 +51,7 @@ defmodule TranslinkDb.Data.Realtime.DB do
     end)
   end
 
-  @spec update_trips(Date.t(), Type.trips_cancelled()) :: any()
+  @spec update_trips(Date.t(), Type.trips_cancelled?()) :: any()
   def update_trips(date, trips_cancelled) do
     opts = [
       on_conflict: :replace_all,

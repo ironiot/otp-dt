@@ -22,30 +22,22 @@ defmodule TranslinkDb.Data.Type do
           trip_id: trip_id()
         }
 
-  @type trips_cancelled :: %{
-          trip_id() => boolean()
-        }
+  @type trip_cancelled? :: boolean()
+  @type trips_cancelled? :: %{trip_id() => trip_cancelled?()}
 
+  @type stop_status :: %{
+          skipped: boolean(),
+          arrival_delay: seconds(),
+          departure_delay: seconds()
+        }
   @type stops_status :: %{
+          trip_id() => %{stop_sequence() => stop_status()}
+        }
+
+  @type updates :: %{
           trip_id() => %{
-            stop_sequence() => %{
-              skipped: boolean(),
-              arrival_delay: seconds(),
-              departure_delay: seconds()
-            }
+            cancelled: trip_cancelled?(),
+            stops: %{stop_sequence() => stop_status()}
           }
         }
-
-  @type trip_status :: %{
-          cancelled: boolean(),
-          stops: %{
-            stop_sequence() => %{
-              skipped: boolean(),
-              arrival_delay: seconds(),
-              departure_delay: seconds()
-            }
-          }
-        }
-
-  @type updates :: %{trip_id() => trip_status()}
 end
