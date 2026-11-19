@@ -4,6 +4,8 @@ defmodule ApiWeb.ApiJSON do
         "route/:orig/:dest", 
         "route/:orig/:dest/:time", 
         "vehicles/:vehicle_no",
+        "realtime/upcoming_rides/:stop_id/",
+        "realtime/upcoming_rides/:stop_id/:time",
       ] 
     }
   end
@@ -25,5 +27,20 @@ defmodule ApiWeb.ApiJSON do
 
   def vehicles(assigns) do
     %{vehicle_no: assigns.num}
+  end
+
+  def upcoming_rides(assigns) when assigns.time == nil do
+    Api.Worker.upcoming_rides(assigns.stop_id)
+  end
+
+  def upcoming_rides(assigns) do
+    case DateTime.from_iso8601(assigns.time <> "+00:00") do
+      { :ok, dt, _ } ->
+        Api.Worker.upcoming_rides(assigns.stop_id, dt)
+      {:error, msg} -> %{ 
+        error: "Error parsing #{assigns.time}. Try again.",
+        reason: msg
+      }
+    end
   end
 end

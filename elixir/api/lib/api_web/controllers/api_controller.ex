@@ -38,4 +38,13 @@ defmodule ApiWeb.ApiController do
     render(conn, :vehicles, num: num)
   end
 
+  def upcoming_rides(conn, 
+    %{"stop_id" => stop_id, "time" => t}
+  ) do
+    render(conn, :upcoming_rides, stop_id: stop_id, time: t)
+  end
+
+  def upcoming_rides(conn, %{"stop_id" => stop_id}) do
+    render(conn, :upcoming_rides, stop_id: stop_id, time: nil)
+  end
 end

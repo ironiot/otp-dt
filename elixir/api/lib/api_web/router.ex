@@ -18,6 +18,11 @@ defmodule ApiWeb.Router do
 
     get "/vehicles/:vehicle_no", 
       ApiController, :vehicles
-      
+
+    get "/realtime/upcoming_rides/:stop_id/:time",
+      ApiController, :upcoming_rides
+
+    get "/realtime/upcoming_rides/:stop_id",
+      ApiController, :upcoming_rides
   end
 end

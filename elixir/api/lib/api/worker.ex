@@ -21,6 +21,20 @@ defmodule Api.Worker do
     )
   end
 
+  def upcoming_rides(stop_id) do
+    GenServer.call(
+      {:global, @server},
+      {:upcoming_rides, stop_id}
+    )
+  end
+
+  def upcoming_rides(stop_id, time) do
+    GenServer.call(
+      {:global, @server},
+      {:upcoming_rides, stop_id, time}
+    )
+  end
+
   @impl GenServer
   def init(_) do
     {:ok, nil}
