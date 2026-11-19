@@ -23,4 +23,22 @@ defmodule TranslinkDb.Query.Server do
   def handle_call({:route, src, des, time}, _from, _state) do
     {:reply, TranslinkDb.Query.BestRoute.find(src, des, time), nil}
   end
+
+  @impl GenServer
+  def handle_call({:upcoming_rides, stop_id, time}, _from, _state) do
+    {
+      :reply, 
+      %{ stop_id: stop_id, time: time },
+      nil
+    }
+  end
+
+  @impl GenServer
+  def handle_call({:upcoming_rides, stop_id}, _from, _state) do
+    {
+      :reply, 
+      %{ stop_id: stop_id, time: nil },
+      nil
+    }
+  end
 end
