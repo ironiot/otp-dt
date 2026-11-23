@@ -34,6 +34,21 @@ defmodule ApiWeb.ApiController do
     )
   end
 
+  def route_arrive(conn,
+    %{
+      "orig" => orig,
+      "dest" => dest,
+      "time" => time
+    }
+  ) do
+    render(
+      conn, :route_arrive,
+      orig: orig,
+      dest: dest,
+      time: time
+    )
+  end
+
   def vehicles(conn, %{"vehicle_no" => num}) do
     render(conn, :vehicles, num: num)
   end

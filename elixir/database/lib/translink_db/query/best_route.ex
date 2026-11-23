@@ -262,8 +262,83 @@ defmodule TranslinkDb.Query.BestRoute do
     end
   end
 
-  def find(_from, _to, {:arrival, _arrival}) do
-    {:error, "TODO: support querying by arrival time"}
+  # Arrive-by search: binary search over departure times for the latest one
+  # whose earliest arrival is still on time. This works because leaving later
+  # never gets you there earlier. Uses static schedule data only.
+
+  # How far before the target arrival to look for departures.
+  @arrival_window 3 * 3600
+  # Stop narrowing once the latest departure is known to within this many seconds.
+  @arrival_precision 60
+
+  # A naive datetime (no zone) is treated as Pacific wall-clock time.
+  # The HTTP API sends this, since the API node has no time zone database.
+  def find(from, to, {:arrival, %NaiveDateTime{} = naive}) do
+    seconds = naive.hour * 3600 + naive.minute * 60 + naive.second
+    find(from, to, {:arrival, Time.join(NaiveDateTime.to_date(naive), seconds)})
+  end
+
+  def find(from, to, {:arrival, arrival}) do
+    with {:ok, from_stop_ids} <- resolve_stop_id(from),
+         {:ok, to_stop_ids} <- resolve_stop_id(to) do
+      # TODO: like departure search, only the arrival date's service counts,
+      # and the window is clamped at midnight (no overnight trips).
+      {arrival_date, target} = Time.split(arrival)
+      service = Static.date_service(arrival_date)
+
+      on_time? = fn departure ->
+        case earliest_arrival(from_stop_ids, to_stop_ids, service, departure) do
+          nil -> false
+          arrival_seconds -> arrival_seconds <= target
+        end
+      end
+
+      earliest_departure = max(target - @arrival_window, 0)
+
+      if on_time?.(earliest_departure) do
+        leave_by =
+          earliest_departure
+          |> latest_departure(target, on_time?)
+          |> then(&Time.join(arrival_date, &1))
+
+        # Reuse the departure search to build the itinerary in the usual format.
+        case find(from, to, {:departure, leave_by}) do
+          result when is_map(result) -> Map.put(result, :leave_by, Time.humanize(leave_by))
+          other -> other
+        end
+      else
+        "No path arriving by #{Time.humanize(arrival)}"
+      end
+    end
+  end
+
+  # Earliest arrival (in seconds) at any of `to_stop_ids` when leaving at
+  # `departure`, or nil if unreachable. Same search as the departure clause,
+  # but returns raw seconds so the binary search can compare them.
+  defp earliest_arrival(from_stop_ids, to_stop_ids, service, departure) do
+    start_nodes =
+      Enum.map(from_stop_ids, &%Node{stop_id: &1, best_arrival: departure, prev: nil})
+
+    priority_queue = Enum.reduce(start_nodes, NodePQ.new(), &NodePQ.update/2)
+
+    case search(List.first(start_nodes), priority_queue, to_stop_ids, service) do
+      :no_path -> nil
+      [] -> departure
+      edges -> List.last(edges).to_arrival
+    end
+  end
+
+  # `on_time` is known to arrive on time; `late` is the upper bound.
+  # Narrow the gap until it is within @arrival_precision.
+  defp latest_departure(on_time, late, _on_time?) when late - on_time <= @arrival_precision,
+    do: on_time
+
+  defp latest_departure(on_time, late, on_time?) do
+    mid = div(on_time + late, 2)
+
+    if on_time?.(mid),
+      do: latest_departure(mid, late, on_time?),
+      else: latest_departure(on_time, mid, on_time?)
   end
 
   defp search(

@@ -2,7 +2,8 @@ defmodule ApiWeb.ApiJSON do
   def help(_assigns) do
     %{ "commands" => [
         "route/:orig/:dest", 
-        "route/:orig/:dest/:time", 
+        "route/:orig/:dest/:time",
+        "route/:orig/:dest/arrive/:time",
         "vehicles/:vehicle_no",
         "realtime/upcoming_rides/:stop_id/",
         "realtime/upcoming_rides/:stop_id/:time",
@@ -19,6 +20,19 @@ defmodule ApiWeb.ApiJSON do
       { :ok, dt, _ } ->
         Api.Worker.route(assigns.orig, assigns.dest, {:departure, dt})
       {:error, msg} -> %{ 
+        error: "Error parsing #{assigns.time}. Try again.",
+        reason: msg
+      }
+    end
+  end
+
+  # Time is Pacific wall-clock, e.g. 2026-11-23T09:00:00.
+  # Sent without a zone; the DB node converts it to Pacific time.
+  def route_arrive(assigns) do
+    case NaiveDateTime.from_iso8601(assigns.time) do
+      {:ok, naive} ->
+        Api.Worker.route(assigns.orig, assigns.dest, {:arrival, naive})
+      {:error, msg} -> %{
         error: "Error parsing #{assigns.time}. Try again.",
         reason: msg
       }

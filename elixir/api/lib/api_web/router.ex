@@ -13,8 +13,11 @@ defmodule ApiWeb.Router do
     get "/route/:orig/:dest", 
       ApiController, :route
 
-    get "/route/:orig/:dest/:time", 
+    get "/route/:orig/:dest/:time",
       ApiController, :route
+
+    get "/route/:orig/:dest/arrive/:time",
+      ApiController, :route_arrive
 
     get "/vehicles/:vehicle_no", 
       ApiController, :vehicles
